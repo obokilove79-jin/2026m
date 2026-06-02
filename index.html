@@ -65,7 +65,7 @@
     <div id="mission-icon">🎯</div>
     <div>
       <div id="mission-text">풍선을 클릭해서 터뜨려요!</div>
-      <div id="mission-sub">남은 목표: <span id="target-left">10</span>개</div>
+      <div id="mission-sub">남은 목표: <span id="target-left">20</span>개</div>
     </div>
   </div>
   <div id="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
@@ -86,9 +86,11 @@ const scoreBoardEl = document.getElementById('score-board');
 
 let score = 0, mode = 'click', hits = 0, goal = 0;
 
+const STAR_MAX = 1000;
+
 const missions = {
-  click:    { icon:'🎯', text:'풍선을 클릭해서 터뜨려요!',              goal:10 },
-  dblclick: { icon:'👆', text:'상자를 두 번 클릭해서 열어요!',           goal:6  },
+  click:    { icon:'🎯', text:'풍선을 클릭해서 터뜨려요!',              goal:20 },
+  dblclick: { icon:'👆', text:'상자를 두 번 클릭해서 열어요!',           goal:20 },
   drag:     { icon:'🛒', text:'🛒 카트 = 200점 / 🧺 바구니 = 100점',   goal:5  },
   trail:    { icon:'✏️', text:'마우스를 누른 채 자유롭게 그려봐요!',      goal:0  }
 };
@@ -111,7 +113,7 @@ function showFeedback(x, y, text, color) {
 function addScore(pts, x, y) {
   score += pts;
   scoreEl.textContent = score;
-  starsEl.textContent = Math.min(3, Math.floor(score / 300));
+  starsEl.textContent = Math.min(3, Math.floor(score / (STAR_MAX / 3)));
   const color = pts >= 200 ? '#BA7517' : '#1D9E75';
   showFeedback(x - 20, y - 10, '+' + pts + '점!', color);
 }
@@ -126,13 +128,13 @@ function updateProgress() {
 function showResult() {
   const overlay = document.createElement('div');
   overlay.id = 'result-overlay';
-  const s = Math.min(3, Math.floor(score / 300));
+  const s = Math.min(3, Math.floor(score / (STAR_MAX / 3)));
   overlay.innerHTML = `<h2>${'⭐'.repeat(s) + '☆'.repeat(3-s)}</h2><p>잘했어요! 총 점수: ${score}점</p><button onclick="resetGame()">다시 하기</button>`;
   gameArea.appendChild(overlay);
 }
 
 function clearGame() { gameArea.innerHTML = ''; hits = 0; progressFill.style.width = '0%'; }
-function resetGame() { clearGame(); startMode(mode); }
+function resetGame() { score = 0; scoreEl.textContent = 0; starsEl.textContent = 0; clearGame(); startMode(mode); }
 function rnd(a, b)   { return Math.floor(Math.random() * (b - a)) + a; }
 
 function startMode(m) {
@@ -165,7 +167,7 @@ function startMode(m) {
 function startClick() {
   let spawned = 0;
   function spawn() {
-    if (spawned >= goal + 5) return;
+    if (spawned >= goal + 8) return;
     spawned++;
     const el = document.createElement('div');
     el.className = 'target';
@@ -176,14 +178,14 @@ function startClick() {
       if (hits >= goal) return;
       el.classList.add('clicked');
       const r = gameArea.getBoundingClientRect();
-      addScore(50, e.clientX - r.left, e.clientY - r.top);
+      addScore(10, e.clientX - r.left, e.clientY - r.top);
       hits++; updateProgress();
       setTimeout(() => { el.remove(); if (hits < goal) spawn(); }, 200);
     });
     gameArea.appendChild(el);
     setTimeout(() => { if (el.parentNode) { el.remove(); if (hits < goal) spawn(); } }, 3500);
   }
-  for (let i = 0; i < 5; i++) setTimeout(spawn, i * 300);
+  for (let i = 0; i < 6; i++) setTimeout(spawn, i * 300);
 }
 
 function startDblClick() {
@@ -202,7 +204,7 @@ function startDblClick() {
         clicks = 0;
         el.textContent = '🎊';
         const r = gameArea.getBoundingClientRect();
-        addScore(50, e.clientX - r.left, e.clientY - r.top);
+        addScore(10, e.clientX - r.left, e.clientY - r.top);
         opened++; hits++; updateProgress();
         setTimeout(() => el.remove(), 500);
         if (opened < goal) setTimeout(spawnBox, 600);
@@ -210,7 +212,7 @@ function startDblClick() {
     });
     gameArea.appendChild(el);
   }
-  for (let i = 0; i < 3; i++) setTimeout(spawnBox, i * 400);
+  for (let i = 0; i < 5; i++) setTimeout(spawnBox, i * 400);
 }
 
 function startDrag() {
