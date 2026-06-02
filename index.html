@@ -51,7 +51,7 @@
   <div id="header">
     <div id="title">🖱️ 마우스 연습 게임</div>
     <div id="score-board">
-      <div class="score-item">점수 <span id="score">0</span></div>
+      <div class="score-item">점수 <span id="score">0</span> / 1000</div>
       <div class="score-item">⭐ <span id="stars">0</span>/3</div>
     </div>
   </div>
@@ -65,7 +65,7 @@
     <div id="mission-icon">🎯</div>
     <div>
       <div id="mission-text">풍선을 클릭해서 터뜨려요!</div>
-      <div id="mission-sub">남은 목표: <span id="target-left">20</span>개</div>
+      <div id="mission-sub">1000점을 모아봐요! 남은 점수: <span id="score-left">1000</span>점</div>
     </div>
   </div>
   <div id="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
@@ -79,20 +79,19 @@ const starsEl = document.getElementById('stars');
 const missionText = document.getElementById('mission-text');
 const missionIcon = document.getElementById('mission-icon');
 const missionSubEl = document.getElementById('mission-sub');
-const targetLeftEl = document.getElementById('target-left');
+const scoreLeftEl = document.getElementById('score-left');
 const progressFill = document.getElementById('progress-fill');
 const progressBar = document.getElementById('progress-bar');
 const scoreBoardEl = document.getElementById('score-board');
 
-let score = 0, mode = 'click', hits = 0, goal = 0;
-
-const STAR_MAX = 1000;
+const SCORE_GOAL = 1000;
+let score = 0, mode = 'click', finished = false;
 
 const missions = {
-  click:    { icon:'🎯', text:'풍선을 클릭해서 터뜨려요!',              goal:20 },
-  dblclick: { icon:'👆', text:'상자를 두 번 클릭해서 열어요!',           goal:20 },
-  drag:     { icon:'🛒', text:'🛒 카트 = 200점 / 🧺 바구니 = 100점',   goal:5  },
-  trail:    { icon:'✏️', text:'마우스를 누른 채 자유롭게 그려봐요!',      goal:0  }
+  click:    { icon:'🎯', text:'풍선을 클릭해서 터뜨려요! (10점씩)' },
+  dblclick: { icon:'👆', text:'상자를 두 번 클릭해서 열어요! (10점씩)' },
+  drag:     { icon:'🛒', text:'🛒 카트 = 200점 / 🧺 바구니 = 100점' },
+  trail:    { icon:'✏️', text:'마우스를 누른 채 자유롭게 그려봐요!' }
 };
 
 const BALLOONS = ['🎈','🎉','⭐','🌟','💫','🍎','🍊','🍋','🍇','🍓'];
@@ -111,31 +110,42 @@ function showFeedback(x, y, text, color) {
 }
 
 function addScore(pts, x, y) {
-  score += pts;
+  if (finished) return;
+  score = Math.min(SCORE_GOAL, score + pts);
   scoreEl.textContent = score;
-  starsEl.textContent = Math.min(3, Math.floor(score / (STAR_MAX / 3)));
+  scoreLeftEl.textContent = Math.max(0, SCORE_GOAL - score);
+  starsEl.textContent = Math.min(3, Math.floor(score / (SCORE_GOAL / 3)));
+  progressFill.style.width = (score / SCORE_GOAL * 100) + '%';
   const color = pts >= 200 ? '#BA7517' : '#1D9E75';
   showFeedback(x - 20, y - 10, '+' + pts + '점!', color);
-}
-
-function updateProgress() {
-  const pct = Math.min(100, (hits / goal) * 100);
-  progressFill.style.width = pct + '%';
-  targetLeftEl.textContent = Math.max(0, goal - hits);
-  if (hits >= goal) showResult();
+  if (score >= SCORE_GOAL) {
+    finished = true;
+    setTimeout(showResult, 400);
+  }
 }
 
 function showResult() {
   const overlay = document.createElement('div');
   overlay.id = 'result-overlay';
-  const s = Math.min(3, Math.floor(score / (STAR_MAX / 3)));
-  overlay.innerHTML = `<h2>${'⭐'.repeat(s) + '☆'.repeat(3-s)}</h2><p>잘했어요! 총 점수: ${score}점</p><button onclick="resetGame()">다시 하기</button>`;
+  overlay.innerHTML = `<h2>⭐⭐⭐</h2><p>🎉 1000점 달성! 정말 잘했어요!</p><button onclick="resetGame()">다시 하기</button>`;
   gameArea.appendChild(overlay);
 }
 
-function clearGame() { gameArea.innerHTML = ''; hits = 0; progressFill.style.width = '0%'; }
-function resetGame() { score = 0; scoreEl.textContent = 0; starsEl.textContent = 0; clearGame(); startMode(mode); }
-function rnd(a, b)   { return Math.floor(Math.random() * (b - a)) + a; }
+function clearGame() {
+  gameArea.innerHTML = '';
+}
+
+function resetGame() {
+  score = 0; finished = false;
+  scoreEl.textContent = 0;
+  scoreLeftEl.textContent = SCORE_GOAL;
+  starsEl.textContent = 0;
+  progressFill.style.width = '0%';
+  clearGame();
+  startMode(mode);
+}
+
+function rnd(a, b) { return Math.floor(Math.random() * (b - a)) + a; }
 
 function startMode(m) {
   mode = m;
@@ -143,7 +153,6 @@ function startMode(m) {
   const mi = missions[m];
   missionIcon.textContent = mi.icon;
   missionText.textContent = mi.text;
-  goal = mi.goal;
 
   if (m === 'trail') {
     scoreBoardEl.style.display = 'none';
@@ -153,8 +162,6 @@ function startMode(m) {
     scoreBoardEl.style.display = 'flex';
     progressBar.style.display = 'block';
     missionSubEl.style.display = 'block';
-    targetLeftEl.textContent = goal;
-    updateProgress();
   }
 
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
@@ -165,38 +172,36 @@ function startMode(m) {
 }
 
 function startClick() {
-  let spawned = 0;
   function spawn() {
-    if (spawned >= goal + 8) return;
-    spawned++;
+    if (finished) return;
     const el = document.createElement('div');
     el.className = 'target';
     const size = rnd(44, 64);
     el.style.cssText = `width:${size}px;height:${size}px;left:${rnd(10,570)}px;top:${rnd(10,270)}px;font-size:${Math.round(size*0.7)}px;`;
     el.textContent = BALLOONS[rnd(0, BALLOONS.length)];
     el.addEventListener('click', e => {
-      if (hits >= goal) return;
+      if (finished) return;
       el.classList.add('clicked');
       const r = gameArea.getBoundingClientRect();
       addScore(10, e.clientX - r.left, e.clientY - r.top);
-      hits++; updateProgress();
-      setTimeout(() => { el.remove(); if (hits < goal) spawn(); }, 200);
+      setTimeout(() => { el.remove(); spawn(); }, 200);
     });
     gameArea.appendChild(el);
-    setTimeout(() => { if (el.parentNode) { el.remove(); if (hits < goal) spawn(); } }, 3500);
+    setTimeout(() => { if (el.parentNode) { el.remove(); spawn(); } }, 3000);
   }
   for (let i = 0; i < 6; i++) setTimeout(spawn, i * 300);
 }
 
 function startDblClick() {
-  let opened = 0;
   function spawnBox() {
+    if (finished) return;
     const el = document.createElement('div');
     el.className = 'dbl-target';
-    el.style.cssText = `left:${rnd(20,560)}px;top:${rnd(20,255)}px;`;
+    el.style.cssText = `left:${rnd(20,540)}px;top:${rnd(20,255)}px;`;
     el.textContent = BOXES[rnd(0, BOXES.length)];
     let clicks = 0, timer;
     el.addEventListener('click', e => {
+      if (finished) return;
       clicks++;
       clearTimeout(timer);
       timer = setTimeout(() => { clicks = 0; }, 400);
@@ -205,9 +210,7 @@ function startDblClick() {
         el.textContent = '🎊';
         const r = gameArea.getBoundingClientRect();
         addScore(10, e.clientX - r.left, e.clientY - r.top);
-        opened++; hits++; updateProgress();
-        setTimeout(() => el.remove(), 500);
-        if (opened < goal) setTimeout(spawnBox, 600);
+        setTimeout(() => { el.remove(); spawnBox(); }, 400);
       }
     });
     gameArea.appendChild(el);
@@ -216,37 +219,11 @@ function startDblClick() {
 }
 
 function startDrag() {
-  const fruits = FRUITS.slice(0, goal);
+  let dragFinished = false;
 
-  const cartDrop = document.createElement('div');
-  cartDrop.className = 'drop-zone is-cart';
-  cartDrop.dataset.type = 'cart';
-  cartDrop.style.cssText = 'left:480px;top:125px;';
-  cartDrop.textContent = '🛒';
-  const cartLabel = document.createElement('div');
-  cartLabel.className = 'cart-label';
-  cartLabel.textContent = '200점!';
-  cartDrop.appendChild(cartLabel);
-  gameArea.appendChild(cartDrop);
-
-  const basketDrop = document.createElement('div');
-  basketDrop.className = 'drop-zone';
-  basketDrop.dataset.type = 'basket';
-  basketDrop.style.cssText = 'left:480px;top:30px;';
-  basketDrop.textContent = '🧺';
-  const bLabel = document.createElement('div');
-  bLabel.className = 'cart-label';
-  bLabel.style.color = '#1D9E75';
-  bLabel.textContent = '100점';
-  basketDrop.appendChild(bLabel);
-  gameArea.appendChild(basketDrop);
-
-  const hint = document.createElement('div');
-  hint.style.cssText = 'position:absolute;right:8px;bottom:10px;font-size:11px;color:#888;text-align:right;pointer-events:none;line-height:1.6;';
-  hint.innerHTML = '🛒 카트 = 200점<br>🧺 바구니 = 100점';
-  gameArea.appendChild(hint);
-
-  fruits.forEach((fruit) => {
+  function spawnFruit() {
+    if (finished || dragFinished) return;
+    const fruit = FRUITS[rnd(0, FRUITS.length)];
     const el = document.createElement('div');
     el.className = 'draggable';
     el.textContent = fruit;
@@ -285,17 +262,45 @@ function startDrag() {
           const pts = dz.dataset.type === 'cart' ? 200 : 100;
           dz.classList.add('matched');
           addScore(pts, parseInt(el.style.left) + 30, parseInt(el.style.top));
-          hits++; updateProgress();
           el.remove();
-          setTimeout(() => dz.classList.remove('matched'), 400);
+          setTimeout(() => { dz.classList.remove('matched'); spawnFruit(); }, 400);
         }
       });
     };
-
     document.addEventListener('mousemove', onMove);
     document.addEventListener('mouseup', onUp);
     gameArea.appendChild(el);
-  });
+  }
+
+  const cartDrop = document.createElement('div');
+  cartDrop.className = 'drop-zone is-cart';
+  cartDrop.dataset.type = 'cart';
+  cartDrop.style.cssText = 'left:480px;top:125px;';
+  cartDrop.textContent = '🛒';
+  const cartLabel = document.createElement('div');
+  cartLabel.className = 'cart-label';
+  cartLabel.textContent = '200점!';
+  cartDrop.appendChild(cartLabel);
+  gameArea.appendChild(cartDrop);
+
+  const basketDrop = document.createElement('div');
+  basketDrop.className = 'drop-zone';
+  basketDrop.dataset.type = 'basket';
+  basketDrop.style.cssText = 'left:480px;top:30px;';
+  basketDrop.textContent = '🧺';
+  const bLabel = document.createElement('div');
+  bLabel.className = 'cart-label';
+  bLabel.style.color = '#1D9E75';
+  bLabel.textContent = '100점';
+  basketDrop.appendChild(bLabel);
+  gameArea.appendChild(basketDrop);
+
+  const hint = document.createElement('div');
+  hint.style.cssText = 'position:absolute;right:8px;bottom:10px;font-size:11px;color:#888;text-align:right;pointer-events:none;line-height:1.6;';
+  hint.innerHTML = '🛒 카트 = 200점<br>🧺 바구니 = 100점';
+  gameArea.appendChild(hint);
+
+  for (let i = 0; i < 3; i++) setTimeout(spawnFruit, i * 200);
 }
 
 function startTrail() {
