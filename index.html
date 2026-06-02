@@ -33,14 +33,14 @@
   .dbl-target { position: absolute; cursor: pointer; font-size: 30px; width: 64px; height: 64px; border-radius: 50%; background: #f0efe8; border: 2px solid #ccc; display: flex; align-items: center; justify-content: center; }
   .feedback { position: absolute; pointer-events: none; font-size: 20px; font-weight: 500; animation: float 0.9s ease-out forwards; z-index: 200; }
   @keyframes float { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-54px)} }
-  #progress-bar { height: 6px; background: #ddd; border-radius: 3px; margin-bottom: 14px; }
-  #progress-fill { height: 6px; border-radius: 3px; background: #1D9E75; transition: width 0.3s; }
+  #progress-bar { height: 10px; background: #ddd; border-radius: 5px; margin-bottom: 14px; }
+  #progress-fill { height: 10px; border-radius: 5px; background: linear-gradient(90deg, #1D9E75, #f0a500); transition: width 0.3s; }
   #tabs { display: flex; gap: 6px; margin-bottom: 12px; }
   .tab { padding: 7px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #888; }
   .tab.active { background: #f0efe8; color: #111; font-weight: 500; border-color: #bbb; }
-  #result-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.93); display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; z-index: 300; }
-  #result-overlay h2 { font-size: 32px; margin-bottom: 8px; }
-  #result-overlay p { font-size: 16px; color: #666; margin-bottom: 20px; }
+  #result-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; z-index: 300; }
+  #result-overlay h2 { font-size: 40px; margin-bottom: 8px; }
+  #result-overlay p { font-size: 18px; color: #444; margin-bottom: 20px; font-weight: 500; }
   #result-overlay button { padding: 10px 28px; border-radius: 8px; background: #1D9E75; color: white; border: none; font-size: 15px; font-weight: 500; cursor: pointer; }
   #result-overlay button:hover { background: #0F6E56; }
   .cart-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #BA7517; font-weight: 500; white-space: nowrap; }
@@ -52,7 +52,7 @@
     <div id="title">🖱️ 마우스 연습 게임</div>
     <div id="score-board">
       <div class="score-item">점수 <span id="score">0</span> / 1000</div>
-      <div class="score-item">⭐ <span id="stars">0</span>/3</div>
+      <div class="score-item">⭐ <span id="stars">0</span> / 3</div>
     </div>
   </div>
   <div id="tabs">
@@ -65,7 +65,7 @@
     <div id="mission-icon">🎯</div>
     <div>
       <div id="mission-text">풍선을 클릭해서 터뜨려요!</div>
-      <div id="mission-sub">1000점을 모아봐요! 남은 점수: <span id="score-left">1000</span>점</div>
+      <div id="mission-sub">남은 점수: <span id="score-left">1000</span>점</div>
     </div>
   </div>
   <div id="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
@@ -73,86 +73,87 @@
 </div>
 
 <script>
-const gameArea = document.getElementById('game-area');
-const scoreEl = document.getElementById('score');
-const starsEl = document.getElementById('stars');
-const missionText = document.getElementById('mission-text');
-const missionIcon = document.getElementById('mission-icon');
-const missionSubEl = document.getElementById('mission-sub');
-const scoreLeftEl = document.getElementById('score-left');
-const progressFill = document.getElementById('progress-fill');
-const progressBar = document.getElementById('progress-bar');
-const scoreBoardEl = document.getElementById('score-board');
+const gameArea   = document.getElementById('game-area');
+const scoreEl    = document.getElementById('score');
+const starsEl    = document.getElementById('stars');
+const missionTextEl = document.getElementById('mission-text');
+const missionIconEl = document.getElementById('mission-icon');
+const missionSubEl  = document.getElementById('mission-sub');
+const scoreLeftEl   = document.getElementById('score-left');
+const progressFill  = document.getElementById('progress-fill');
+const progressBar   = document.getElementById('progress-bar');
+const scoreBoardEl  = document.getElementById('score-board');
 
 const SCORE_GOAL = 1000;
-let score = 0, mode = 'click', finished = false;
-
-const missions = {
-  click:    { icon:'🎯', text:'풍선을 클릭해서 터뜨려요! (10점씩)' },
-  dblclick: { icon:'👆', text:'상자를 두 번 클릭해서 열어요! (10점씩)' },
-  drag:     { icon:'🛒', text:'🛒 카트 = 200점 / 🧺 바구니 = 100점' },
-  trail:    { icon:'✏️', text:'마우스를 누른 채 자유롭게 그려봐요!' }
-};
+let score = 0;
+let mode = 'click';
+let done = false;
 
 const BALLOONS = ['🎈','🎉','⭐','🌟','💫','🍎','🍊','🍋','🍇','🍓'];
 const FRUITS   = ['🍎','🍊','🍋','🍇','🍓'];
 const BOXES    = ['📦','🎁','📫','🗃️','📮'];
 
-function showFeedback(x, y, text, color) {
+function rnd(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+function randPts(min, max) {
+  const val = rnd(min, max);
+  return Math.round(val / 10) * 10;
+}
+
+function showFeedback(x, y, pts, color) {
   const el = document.createElement('div');
   el.className = 'feedback';
-  el.textContent = text;
-  el.style.left = x + 'px';
-  el.style.top  = y + 'px';
-  el.style.color = color || '#1D9E75';
+  el.textContent = '+' + pts + '점!';
+  el.style.cssText = `left:${x}px;top:${y}px;color:${color || '#1D9E75'};`;
   gameArea.appendChild(el);
   setTimeout(() => el.remove(), 900);
 }
 
-function addScore(pts, x, y) {
-  if (finished) return;
+function addScore(pts, x, y, color) {
+  if (done) return;
   score = Math.min(SCORE_GOAL, score + pts);
   scoreEl.textContent = score;
   scoreLeftEl.textContent = Math.max(0, SCORE_GOAL - score);
   starsEl.textContent = Math.min(3, Math.floor(score / (SCORE_GOAL / 3)));
-  progressFill.style.width = (score / SCORE_GOAL * 100) + '%';
-  const color = pts >= 200 ? '#BA7517' : '#1D9E75';
-  showFeedback(x - 20, y - 10, '+' + pts + '점!', color);
+  progressFill.style.width = (score / SCORE_GOAL * 100).toFixed(1) + '%';
+  showFeedback(x, y, pts, color);
   if (score >= SCORE_GOAL) {
-    finished = true;
-    setTimeout(showResult, 400);
+    done = true;
+    setTimeout(showResult, 500);
   }
 }
 
 function showResult() {
-  const overlay = document.createElement('div');
-  overlay.id = 'result-overlay';
-  overlay.innerHTML = `<h2>⭐⭐⭐</h2><p>🎉 1000점 달성! 정말 잘했어요!</p><button onclick="resetGame()">다시 하기</button>`;
-  gameArea.appendChild(overlay);
-}
-
-function clearGame() {
   gameArea.innerHTML = '';
+  const ol = document.createElement('div');
+  ol.id = 'result-overlay';
+  ol.innerHTML = `<h2>🎉🎊🎉</h2><p>1000점 달성! 최고예요!</p><button onclick="resetGame()">다시 하기</button>`;
+  gameArea.appendChild(ol);
 }
 
 function resetGame() {
-  score = 0; finished = false;
+  score = 0; done = false;
   scoreEl.textContent = 0;
   scoreLeftEl.textContent = SCORE_GOAL;
   starsEl.textContent = 0;
   progressFill.style.width = '0%';
-  clearGame();
+  gameArea.innerHTML = '';
   startMode(mode);
 }
 
-function rnd(a, b) { return Math.floor(Math.random() * (b - a)) + a; }
-
 function startMode(m) {
   mode = m;
-  clearGame();
-  const mi = missions[m];
-  missionIcon.textContent = mi.icon;
-  missionText.textContent = mi.text;
+  gameArea.innerHTML = '';
+
+  const info = {
+    click:    { icon:'🎯', text:'풍선을 클릭해서 터뜨려요! (10~30점 랜덤)' },
+    dblclick: { icon:'👆', text:'상자를 두 번 클릭해서 열어요! (10~30점 랜덤)' },
+    drag:     { icon:'🛒', text:'🛒 카트 100~300점 / 🧺 바구니 50~150점' },
+    trail:    { icon:'✏️', text:'마우스를 누른 채 자유롭게 그려봐요!' }
+  };
+
+  missionIconEl.textContent = info[m].icon;
+  missionTextEl.textContent = info[m].text;
 
   if (m === 'trail') {
     scoreBoardEl.style.display = 'none';
@@ -165,103 +166,140 @@ function startMode(m) {
   }
 
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
+
   if (m === 'click')         startClick();
   else if (m === 'dblclick') startDblClick();
   else if (m === 'drag')     startDrag();
-  else if (m === 'trail')    startTrail();
+  else                       startTrail();
 }
 
+/* ── 클릭 ── */
 function startClick() {
   function spawn() {
-    if (finished) return;
+    if (done) return;
     const el = document.createElement('div');
     el.className = 'target';
     const size = rnd(44, 64);
     el.style.cssText = `width:${size}px;height:${size}px;left:${rnd(10,570)}px;top:${rnd(10,270)}px;font-size:${Math.round(size*0.7)}px;`;
-    el.textContent = BALLOONS[rnd(0, BALLOONS.length)];
+    el.textContent = BALLOONS[rnd(0, BALLOONS.length - 1)];
+    let used = false;
     el.addEventListener('click', e => {
-      if (finished) return;
+      if (done || used) return;
+      used = true;
       el.classList.add('clicked');
       const r = gameArea.getBoundingClientRect();
-      addScore(10, e.clientX - r.left, e.clientY - r.top);
-      setTimeout(() => { el.remove(); spawn(); }, 200);
+      const pts = randPts(10, 30);
+      addScore(pts, e.clientX - r.left - 20, e.clientY - r.top - 10);
+      setTimeout(() => { if (el.parentNode) el.remove(); spawn(); }, 200);
     });
     gameArea.appendChild(el);
-    setTimeout(() => { if (el.parentNode) { el.remove(); spawn(); } }, 3000);
+    const life = rnd(2500, 4000);
+    setTimeout(() => { if (el.parentNode && !used) { el.remove(); spawn(); } }, life);
   }
-  for (let i = 0; i < 6; i++) setTimeout(spawn, i * 300);
+  for (let i = 0; i < 6; i++) setTimeout(spawn, i * 250);
 }
 
+/* ── 두 번 클릭 ── */
 function startDblClick() {
   function spawnBox() {
-    if (finished) return;
+    if (done) return;
     const el = document.createElement('div');
     el.className = 'dbl-target';
     el.style.cssText = `left:${rnd(20,540)}px;top:${rnd(20,255)}px;`;
-    el.textContent = BOXES[rnd(0, BOXES.length)];
-    let clicks = 0, timer;
+    el.textContent = BOXES[rnd(0, BOXES.length - 1)];
+    let clicks = 0, timer, used = false;
     el.addEventListener('click', e => {
-      if (finished) return;
+      if (done || used) return;
       clicks++;
       clearTimeout(timer);
       timer = setTimeout(() => { clicks = 0; }, 400);
       if (clicks >= 2) {
-        clicks = 0;
+        used = true;
         el.textContent = '🎊';
         const r = gameArea.getBoundingClientRect();
-        addScore(10, e.clientX - r.left, e.clientY - r.top);
-        setTimeout(() => { el.remove(); spawnBox(); }, 400);
+        const pts = randPts(10, 30);
+        addScore(pts, e.clientX - r.left - 20, e.clientY - r.top - 10);
+        setTimeout(() => { if (el.parentNode) el.remove(); spawnBox(); }, 400);
       }
     });
     gameArea.appendChild(el);
   }
-  for (let i = 0; i < 5; i++) setTimeout(spawnBox, i * 400);
+  for (let i = 0; i < 5; i++) setTimeout(spawnBox, i * 350);
 }
 
+/* ── 드래그&드롭 ── */
 function startDrag() {
-  let dragFinished = false;
+  const cartDrop = document.createElement('div');
+  cartDrop.className = 'drop-zone is-cart';
+  cartDrop.dataset.type = 'cart';
+  cartDrop.style.cssText = 'left:470px;top:120px;';
+  cartDrop.textContent = '🛒';
+  const cLbl = document.createElement('div');
+  cLbl.className = 'cart-label';
+  cLbl.textContent = '100~300점';
+  cartDrop.appendChild(cLbl);
+  gameArea.appendChild(cartDrop);
+
+  const basketDrop = document.createElement('div');
+  basketDrop.className = 'drop-zone';
+  basketDrop.dataset.type = 'basket';
+  basketDrop.style.cssText = 'left:470px;top:25px;';
+  basketDrop.textContent = '🧺';
+  const bLbl = document.createElement('div');
+  bLbl.className = 'cart-label';
+  bLbl.style.color = '#1D9E75';
+  bLbl.textContent = '50~150점';
+  basketDrop.appendChild(bLbl);
+  gameArea.appendChild(basketDrop);
+
+  const hint = document.createElement('div');
+  hint.style.cssText = 'position:absolute;right:8px;bottom:10px;font-size:11px;color:#888;text-align:right;pointer-events:none;line-height:1.7;';
+  hint.innerHTML = '🛒 카트 = 100~300점<br>🧺 바구니 = 50~150점';
+  gameArea.appendChild(hint);
 
   function spawnFruit() {
-    if (finished || dragFinished) return;
-    const fruit = FRUITS[rnd(0, FRUITS.length)];
+    if (done) return;
     const el = document.createElement('div');
     el.className = 'draggable';
-    el.textContent = fruit;
-    el.style.left = rnd(20, 160) + 'px';
+    el.textContent = FRUITS[rnd(0, FRUITS.length - 1)];
+    el.style.left = rnd(20, 150) + 'px';
     el.style.top  = rnd(20, 265) + 'px';
-    let startX, startY, startLeft, startTop, dragging = false;
+    let sx, sy, sl, st, dragging = false, used = false;
 
     el.addEventListener('mousedown', e => {
+      if (used) return;
       e.preventDefault();
       dragging = true;
       el.classList.add('dragging');
-      startX = e.clientX; startY = e.clientY;
-      startLeft = parseInt(el.style.left); startTop = parseInt(el.style.top);
+      sx = e.clientX; sy = e.clientY;
+      sl = parseInt(el.style.left); st = parseInt(el.style.top);
       document.querySelectorAll('.drop-zone').forEach(dz => dz.classList.add('highlight'));
     });
 
     const onMove = e => {
       if (!dragging) return;
-      el.style.left = (startLeft + e.clientX - startX) + 'px';
-      el.style.top  = (startTop  + e.clientY - startY) + 'px';
+      el.style.left = (sl + e.clientX - sx) + 'px';
+      el.style.top  = (st + e.clientY - sy) + 'px';
     };
     const onUp = () => {
       if (!dragging) return;
       dragging = false;
       el.classList.remove('dragging');
       document.querySelectorAll('.drop-zone').forEach(dz => dz.classList.remove('highlight'));
-      const elRect = el.getBoundingClientRect();
-      let matched = false;
+      if (used) return;
+      const er = el.getBoundingClientRect();
       document.querySelectorAll('.drop-zone').forEach(dz => {
-        if (matched) return;
-        const dzRect = dz.getBoundingClientRect();
-        const ox = Math.max(0, Math.min(elRect.right, dzRect.right) - Math.max(elRect.left, dzRect.left));
-        const oy = Math.max(0, Math.min(elRect.bottom, dzRect.bottom) - Math.max(elRect.top, dzRect.top));
+        if (used) return;
+        const dr = dz.getBoundingClientRect();
+        const ox = Math.max(0, Math.min(er.right, dr.right) - Math.max(er.left, dr.left));
+        const oy = Math.max(0, Math.min(er.bottom, dr.bottom) - Math.max(er.top, dr.top));
         if (ox * oy > 600) {
-          matched = true;
-          const pts = dz.dataset.type === 'cart' ? 200 : 100;
+          used = true;
+          const pts = dz.dataset.type === 'cart'
+            ? randPts(100, 300)
+            : randPts(50, 150);
           dz.classList.add('matched');
-          addScore(pts, parseInt(el.style.left) + 30, parseInt(el.style.top));
+          addScore(pts, parseInt(el.style.left) + 10, parseInt(el.style.top), dz.dataset.type === 'cart' ? '#BA7517' : '#1D9E75');
           el.remove();
           setTimeout(() => { dz.classList.remove('matched'); spawnFruit(); }, 400);
         }
@@ -272,37 +310,10 @@ function startDrag() {
     gameArea.appendChild(el);
   }
 
-  const cartDrop = document.createElement('div');
-  cartDrop.className = 'drop-zone is-cart';
-  cartDrop.dataset.type = 'cart';
-  cartDrop.style.cssText = 'left:480px;top:125px;';
-  cartDrop.textContent = '🛒';
-  const cartLabel = document.createElement('div');
-  cartLabel.className = 'cart-label';
-  cartLabel.textContent = '200점!';
-  cartDrop.appendChild(cartLabel);
-  gameArea.appendChild(cartDrop);
-
-  const basketDrop = document.createElement('div');
-  basketDrop.className = 'drop-zone';
-  basketDrop.dataset.type = 'basket';
-  basketDrop.style.cssText = 'left:480px;top:30px;';
-  basketDrop.textContent = '🧺';
-  const bLabel = document.createElement('div');
-  bLabel.className = 'cart-label';
-  bLabel.style.color = '#1D9E75';
-  bLabel.textContent = '100점';
-  basketDrop.appendChild(bLabel);
-  gameArea.appendChild(basketDrop);
-
-  const hint = document.createElement('div');
-  hint.style.cssText = 'position:absolute;right:8px;bottom:10px;font-size:11px;color:#888;text-align:right;pointer-events:none;line-height:1.6;';
-  hint.innerHTML = '🛒 카트 = 200점<br>🧺 바구니 = 100점';
-  gameArea.appendChild(hint);
-
   for (let i = 0; i < 3; i++) setTimeout(spawnFruit, i * 200);
 }
 
+/* ── 그림 그리기 ── */
 function startTrail() {
   let drawing = false;
   const canvas = document.createElement('canvas');
@@ -312,52 +323,52 @@ function startTrail() {
   gameArea.appendChild(canvas);
   const ctx = canvas.getContext('2d');
   const colors = ['#E24B4A','#378ADD','#1D9E75','#BA7517','#993556','#534AB7'];
-  let colorIdx = 0;
+  let ci = 0;
 
   const hint = document.createElement('div');
   hint.style.cssText = 'position:absolute;bottom:12px;left:0;right:0;text-align:center;font-size:14px;color:#888;pointer-events:none;';
   hint.textContent = '마우스를 누른 채로 그림을 그려봐요 🎨';
   gameArea.appendChild(hint);
 
-  const colorRow = document.createElement('div');
-  colorRow.style.cssText = 'position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:10;';
+  const row = document.createElement('div');
+  row.style.cssText = 'position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:10;';
   colors.forEach((c, i) => {
     const btn = document.createElement('div');
     btn.style.cssText = `width:24px;height:24px;border-radius:50%;background:${c};cursor:pointer;border:2px solid white;`;
-    btn.addEventListener('click', () => { colorIdx = i; });
-    colorRow.appendChild(btn);
+    btn.addEventListener('click', () => { ci = i; });
+    row.appendChild(btn);
   });
-  gameArea.appendChild(colorRow);
+  gameArea.appendChild(row);
 
-  const clearBtn = document.createElement('button');
-  clearBtn.textContent = '지우기';
-  clearBtn.style.cssText = 'position:absolute;top:10px;left:10px;padding:4px 12px;font-size:13px;border-radius:8px;z-index:10;cursor:pointer;';
-  clearBtn.addEventListener('click', () => ctx.clearRect(0, 0, canvas.width, canvas.height));
-  gameArea.appendChild(clearBtn);
+  const clrBtn = document.createElement('button');
+  clrBtn.textContent = '지우기';
+  clrBtn.style.cssText = 'position:absolute;top:10px;left:10px;padding:4px 12px;font-size:13px;border-radius:8px;z-index:10;cursor:pointer;';
+  clrBtn.addEventListener('click', () => ctx.clearRect(0, 0, canvas.width, canvas.height));
+  gameArea.appendChild(clrBtn);
 
   canvas.addEventListener('mousedown', e => {
     drawing = true;
     const r = canvas.getBoundingClientRect();
-    ctx.beginPath();
-    ctx.moveTo(e.clientX - r.left, e.clientY - r.top);
-    ctx.strokeStyle = colors[colorIdx];
-    ctx.lineWidth = 5;
-    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(e.clientX - r.left, e.clientY - r.top);
+    ctx.strokeStyle = colors[ci]; ctx.lineWidth = 5; ctx.lineCap = 'round';
     hint.style.display = 'none';
   });
   canvas.addEventListener('mousemove', e => {
     if (!drawing) return;
     const r = canvas.getBoundingClientRect();
     ctx.lineTo(e.clientX - r.left, e.clientY - r.top);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(e.clientX - r.left, e.clientY - r.top);
+    ctx.stroke(); ctx.beginPath(); ctx.moveTo(e.clientX - r.left, e.clientY - r.top);
   });
   canvas.addEventListener('mouseup', () => { drawing = false; });
   canvas.addEventListener('mouseleave', () => { drawing = false; });
 }
 
-document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => startMode(t.dataset.mode)));
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  if (!done) { score = 0; scoreEl.textContent = 0; scoreLeftEl.textContent = SCORE_GOAL; starsEl.textContent = 0; progressFill.style.width = '0%'; }
+  done = false;
+  startMode(t.dataset.mode);
+}));
+
 startMode('click');
 </script>
 </body>
