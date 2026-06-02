@@ -1,47 +1,52 @@
-
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마우스 연습 게임</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-  #app { padding: 16px; max-width: 680px; font-family: var(--font-sans); }
+  body { font-family: sans-serif; background: #f5f5f0; }
+  #app { padding: 16px; max-width: 680px; margin: 0 auto; }
   #header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-  #title { font-size: 20px; font-weight: 500; color: var(--color-text-primary); }
+  #title { font-size: 20px; font-weight: 500; color: #111; }
   #score-board { display: flex; gap: 12px; }
-  .score-item { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 6px 14px; font-size: 14px; color: var(--color-text-secondary); }
-  .score-item span { font-weight: 500; color: var(--color-text-primary); font-size: 16px; }
-  #mission-bar { background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 12px; }
+  .score-item { background: #f0efe8; border-radius: 8px; padding: 6px 14px; font-size: 14px; color: #666; }
+  .score-item span { font-weight: 500; color: #111; font-size: 16px; }
+  #mission-bar { background: #f0efe8; border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 12px; }
   #mission-icon { font-size: 24px; width: 36px; text-align: center; }
-  #mission-text { font-size: 15px; font-weight: 500; color: var(--color-text-primary); }
-  #mission-sub { font-size: 13px; color: var(--color-text-secondary); margin-top: 2px; }
-  #game-area { position: relative; width: 100%; height: 340px; background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; cursor: default; }
+  #mission-text { font-size: 15px; font-weight: 500; color: #111; }
+  #mission-sub { font-size: 13px; color: #888; margin-top: 2px; }
+  #game-area { position: relative; width: 100%; height: 340px; background: #fff; border: 1px solid #ddd; border-radius: 12px; overflow: hidden; cursor: default; }
   .target { position: absolute; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: transform 0.1s; }
   .target:hover { transform: scale(1.1); }
   .target.clicked { animation: pop 0.2s ease-out forwards; }
   @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.4)} 100%{transform:scale(0)} }
-  .draggable { position: absolute; cursor: grab; font-size: 32px; display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; border-radius: var(--border-radius-lg); border: 2px solid var(--color-border-secondary); background: var(--color-background-primary); }
+  .draggable { position: absolute; cursor: grab; font-size: 32px; display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; border-radius: 10px; border: 2px solid #ccc; background: #fff; }
   .draggable.dragging { cursor: grabbing; opacity: 0.7; z-index: 100; }
-  .drop-zone { position: absolute; width: 80px; height: 80px; border-radius: var(--border-radius-lg); border: 2px dashed var(--color-border-secondary); display: flex; align-items: center; justify-content: center; font-size: 28px; transition: background 0.2s; }
+  .drop-zone { position: absolute; width: 80px; height: 80px; border-radius: 10px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 28px; transition: background 0.2s; }
   .drop-zone.is-cart { width: 90px; height: 90px; font-size: 36px; border-color: #BA7517; border-width: 2.5px; }
   .drop-zone.highlight { background: #E1F5EE; border-color: #1D9E75; }
   .drop-zone.is-cart.highlight { background: #FAEEDA; border-color: #BA7517; }
   .drop-zone.matched { animation: bounce 0.3s ease; }
   @keyframes bounce { 0%{transform:scale(1)} 40%{transform:scale(1.18)} 100%{transform:scale(1)} }
-  .dbl-target { position: absolute; cursor: pointer; font-size: 30px; width: 64px; height: 64px; border-radius: 50%; background: var(--color-background-secondary); border: 2px solid var(--color-border-secondary); display: flex; align-items: center; justify-content: center; }
+  .dbl-target { position: absolute; cursor: pointer; font-size: 30px; width: 64px; height: 64px; border-radius: 50%; background: #f0efe8; border: 2px solid #ccc; display: flex; align-items: center; justify-content: center; }
   .feedback { position: absolute; pointer-events: none; font-size: 20px; font-weight: 500; animation: float 0.9s ease-out forwards; z-index: 200; }
   @keyframes float { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-54px)} }
-  #progress-bar { height: 6px; background: var(--color-border-tertiary); border-radius: 3px; margin-bottom: 14px; }
+  #progress-bar { height: 6px; background: #ddd; border-radius: 3px; margin-bottom: 14px; }
   #progress-fill { height: 6px; border-radius: 3px; background: #1D9E75; transition: width 0.3s; }
   #tabs { display: flex; gap: 6px; margin-bottom: 12px; }
-  .tab { padding: 7px 14px; border-radius: var(--border-radius-md); font-size: 13px; cursor: pointer; border: 0.5px solid var(--color-border-tertiary); background: var(--color-background-primary); color: var(--color-text-secondary); }
-  .tab.active { background: var(--color-background-secondary); color: var(--color-text-primary); font-weight: 500; border-color: var(--color-border-secondary); }
-  #result-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.93); display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: var(--border-radius-lg); z-index: 300; }
+  .tab { padding: 7px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #888; }
+  .tab.active { background: #f0efe8; color: #111; font-weight: 500; border-color: #bbb; }
+  #result-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.93); display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; z-index: 300; }
   #result-overlay h2 { font-size: 32px; margin-bottom: 8px; }
-  #result-overlay p { font-size: 16px; color: var(--color-text-secondary); margin-bottom: 20px; }
-  #result-overlay button { padding: 10px 28px; border-radius: var(--border-radius-md); background: #1D9E75; color: white; border: none; font-size: 15px; font-weight: 500; cursor: pointer; }
+  #result-overlay p { font-size: 16px; color: #666; margin-bottom: 20px; }
+  #result-overlay button { padding: 10px 28px; border-radius: 8px; background: #1D9E75; color: white; border: none; font-size: 15px; font-weight: 500; cursor: pointer; }
   #result-overlay button:hover { background: #0F6E56; }
   .cart-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #BA7517; font-weight: 500; white-space: nowrap; }
 </style>
-
-<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">초등학교 3학년 마우스 연습 게임</h2>
-
+</head>
+<body>
 <div id="app">
   <div id="header">
     <div id="title">🖱️ 마우스 연습 게임</div>
@@ -50,22 +55,19 @@
       <div class="score-item">⭐ <span id="stars">0</span>/3</div>
     </div>
   </div>
-
   <div id="tabs">
     <div class="tab active" data-mode="click">🎯 클릭</div>
     <div class="tab" data-mode="dblclick">👆 두 번 클릭</div>
     <div class="tab" data-mode="drag">🛒 드래그&드롭</div>
     <div class="tab" data-mode="trail">✏️ 그림 그리기</div>
   </div>
-
   <div id="mission-bar">
     <div id="mission-icon">🎯</div>
     <div>
       <div id="mission-text">풍선을 클릭해서 터뜨려요!</div>
-      <div id="mission-sub" id="mission-sub">남은 목표: <span id="target-left">10</span>개</div>
+      <div id="mission-sub">남은 목표: <span id="target-left">10</span>개</div>
     </div>
   </div>
-
   <div id="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
   <div id="game-area"></div>
 </div>
@@ -76,19 +78,19 @@ const scoreEl = document.getElementById('score');
 const starsEl = document.getElementById('stars');
 const missionText = document.getElementById('mission-text');
 const missionIcon = document.getElementById('mission-icon');
-const missionSubEl = document.querySelector('#mission-sub');
+const missionSubEl = document.getElementById('mission-sub');
 const targetLeftEl = document.getElementById('target-left');
 const progressFill = document.getElementById('progress-fill');
 const progressBar = document.getElementById('progress-bar');
-const scoreBoardEl = document.querySelector('#score-board');
+const scoreBoardEl = document.getElementById('score-board');
 
 let score = 0, mode = 'click', hits = 0, goal = 0;
 
 const missions = {
-  click:    { icon:'🎯', text:'풍선을 클릭해서 터뜨려요!',           goal:10 },
-  dblclick: { icon:'👆', text:'상자를 두 번 클릭해서 열어요!',        goal:6  },
-  drag:     { icon:'🛒', text:'🛒 카트 = 20점 / 🧺 바구니 = 10점',  goal:5  },
-  trail:    { icon:'✏️', text:'마우스를 누른 채 자유롭게 그려봐요!',   goal:0  }
+  click:    { icon:'🎯', text:'풍선을 클릭해서 터뜨려요!',              goal:10 },
+  dblclick: { icon:'👆', text:'상자를 두 번 클릭해서 열어요!',           goal:6  },
+  drag:     { icon:'🛒', text:'🛒 카트 = 200점 / 🧺 바구니 = 100점',   goal:5  },
+  trail:    { icon:'✏️', text:'마우스를 누른 채 자유롭게 그려봐요!',      goal:0  }
 };
 
 const BALLOONS = ['🎈','🎉','⭐','🌟','💫','🍎','🍊','🍋','🍇','🍓'];
@@ -109,8 +111,8 @@ function showFeedback(x, y, text, color) {
 function addScore(pts, x, y) {
   score += pts;
   scoreEl.textContent = score;
-  starsEl.textContent = Math.min(3, Math.floor(score / 30));
-  const color = pts >= 20 ? '#BA7517' : '#1D9E75';
+  starsEl.textContent = Math.min(3, Math.floor(score / 300));
+  const color = pts >= 200 ? '#BA7517' : '#1D9E75';
   showFeedback(x - 20, y - 10, '+' + pts + '점!', color);
 }
 
@@ -124,7 +126,7 @@ function updateProgress() {
 function showResult() {
   const overlay = document.createElement('div');
   overlay.id = 'result-overlay';
-  const s = Math.min(3, Math.floor(score / 30));
+  const s = Math.min(3, Math.floor(score / 300));
   overlay.innerHTML = `<h2>${'⭐'.repeat(s) + '☆'.repeat(3-s)}</h2><p>잘했어요! 총 점수: ${score}점</p><button onclick="resetGame()">다시 하기</button>`;
   gameArea.appendChild(overlay);
 }
@@ -174,7 +176,7 @@ function startClick() {
       if (hits >= goal) return;
       el.classList.add('clicked');
       const r = gameArea.getBoundingClientRect();
-      addScore(10, e.clientX - r.left, e.clientY - r.top);
+      addScore(50, e.clientX - r.left, e.clientY - r.top);
       hits++; updateProgress();
       setTimeout(() => { el.remove(); if (hits < goal) spawn(); }, 200);
     });
@@ -200,7 +202,7 @@ function startDblClick() {
         clicks = 0;
         el.textContent = '🎊';
         const r = gameArea.getBoundingClientRect();
-        addScore(10, e.clientX - r.left, e.clientY - r.top);
+        addScore(50, e.clientX - r.left, e.clientY - r.top);
         opened++; hits++; updateProgress();
         setTimeout(() => el.remove(), 500);
         if (opened < goal) setTimeout(spawnBox, 600);
@@ -217,29 +219,29 @@ function startDrag() {
   const cartDrop = document.createElement('div');
   cartDrop.className = 'drop-zone is-cart';
   cartDrop.dataset.type = 'cart';
-  cartDrop.style.cssText = `left:480px;top:125px;`;
+  cartDrop.style.cssText = 'left:480px;top:125px;';
   cartDrop.textContent = '🛒';
   const cartLabel = document.createElement('div');
   cartLabel.className = 'cart-label';
-  cartLabel.textContent = '20점!';
+  cartLabel.textContent = '200점!';
   cartDrop.appendChild(cartLabel);
   gameArea.appendChild(cartDrop);
 
   const basketDrop = document.createElement('div');
   basketDrop.className = 'drop-zone';
   basketDrop.dataset.type = 'basket';
-  basketDrop.style.cssText = `left:480px;top:30px;`;
+  basketDrop.style.cssText = 'left:480px;top:30px;';
   basketDrop.textContent = '🧺';
   const bLabel = document.createElement('div');
   bLabel.className = 'cart-label';
   bLabel.style.color = '#1D9E75';
-  bLabel.textContent = '10점';
+  bLabel.textContent = '100점';
   basketDrop.appendChild(bLabel);
   gameArea.appendChild(basketDrop);
 
   const hint = document.createElement('div');
-  hint.style.cssText = 'position:absolute;right:8px;bottom:10px;font-size:11px;color:var(--color-text-secondary);text-align:right;pointer-events:none;line-height:1.6;';
-  hint.innerHTML = '🛒 카트 = 20점<br>🧺 바구니 = 10점';
+  hint.style.cssText = 'position:absolute;right:8px;bottom:10px;font-size:11px;color:#888;text-align:right;pointer-events:none;line-height:1.6;';
+  hint.innerHTML = '🛒 카트 = 200점<br>🧺 바구니 = 100점';
   gameArea.appendChild(hint);
 
   fruits.forEach((fruit) => {
@@ -278,7 +280,7 @@ function startDrag() {
         const oy = Math.max(0, Math.min(elRect.bottom, dzRect.bottom) - Math.max(elRect.top, dzRect.top));
         if (ox * oy > 600) {
           matched = true;
-          const pts = dz.dataset.type === 'cart' ? 20 : 10;
+          const pts = dz.dataset.type === 'cart' ? 200 : 100;
           dz.classList.add('matched');
           addScore(pts, parseInt(el.style.left) + 30, parseInt(el.style.top));
           hits++; updateProgress();
@@ -306,7 +308,7 @@ function startTrail() {
   let colorIdx = 0;
 
   const hint = document.createElement('div');
-  hint.style.cssText = 'position:absolute;bottom:12px;left:0;right:0;text-align:center;font-size:14px;color:var(--color-text-secondary);pointer-events:none;';
+  hint.style.cssText = 'position:absolute;bottom:12px;left:0;right:0;text-align:center;font-size:14px;color:#888;pointer-events:none;';
   hint.textContent = '마우스를 누른 채로 그림을 그려봐요 🎨';
   gameArea.appendChild(hint);
 
@@ -322,7 +324,7 @@ function startTrail() {
 
   const clearBtn = document.createElement('button');
   clearBtn.textContent = '지우기';
-  clearBtn.style.cssText = 'position:absolute;top:10px;left:10px;padding:4px 12px;font-size:13px;border-radius:var(--border-radius-md);z-index:10;';
+  clearBtn.style.cssText = 'position:absolute;top:10px;left:10px;padding:4px 12px;font-size:13px;border-radius:8px;z-index:10;cursor:pointer;';
   clearBtn.addEventListener('click', () => ctx.clearRect(0, 0, canvas.width, canvas.height));
   gameArea.appendChild(clearBtn);
 
@@ -351,3 +353,5 @@ function startTrail() {
 document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => startMode(t.dataset.mode)));
 startMode('click');
 </script>
+</body>
+</html>
