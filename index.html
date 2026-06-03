@@ -5,371 +5,399 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>마우스 연습 게임</title>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
-  body { font-family: sans-serif; background: #f5f5f0; }
-  #app { padding: 16px; max-width: 680px; margin: 0 auto; }
-  #header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-  #title { font-size: 20px; font-weight: 500; color: #111; }
-  #score-board { display: flex; gap: 12px; }
-  .score-item { background: #f0efe8; border-radius: 8px; padding: 6px 14px; font-size: 14px; color: #666; }
-  .score-item span { font-weight: 500; color: #111; font-size: 16px; }
-  #mission-bar { background: #f0efe8; border-radius: 12px; padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 12px; }
-  #mission-icon { font-size: 24px; width: 36px; text-align: center; }
-  #mission-text { font-size: 15px; font-weight: 500; color: #111; }
-  #mission-sub { font-size: 13px; color: #888; margin-top: 2px; }
-  #game-area { position: relative; width: 100%; height: 340px; background: #fff; border: 1px solid #ddd; border-radius: 12px; overflow: hidden; cursor: default; }
-  .target { position: absolute; display: flex; align-items: center; justify-content: center; border-radius: 50%; cursor: pointer; transition: transform 0.1s; }
-  .target:hover { transform: scale(1.1); }
-  .target.clicked { animation: pop 0.2s ease-out forwards; }
-  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.4)} 100%{transform:scale(0)} }
-  .draggable { position: absolute; cursor: grab; font-size: 32px; display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; border-radius: 10px; border: 2px solid #ccc; background: #fff; }
-  .draggable.dragging { cursor: grabbing; opacity: 0.7; z-index: 100; }
-  .drop-zone { position: absolute; width: 80px; height: 80px; border-radius: 10px; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 28px; transition: background 0.2s; }
-  .drop-zone.is-cart { width: 90px; height: 90px; font-size: 36px; border-color: #BA7517; border-width: 2.5px; }
-  .drop-zone.highlight { background: #E1F5EE; border-color: #1D9E75; }
-  .drop-zone.is-cart.highlight { background: #FAEEDA; border-color: #BA7517; }
-  .drop-zone.matched { animation: bounce 0.3s ease; }
-  @keyframes bounce { 0%{transform:scale(1)} 40%{transform:scale(1.18)} 100%{transform:scale(1)} }
-  .dbl-target { position: absolute; cursor: pointer; font-size: 30px; width: 64px; height: 64px; border-radius: 50%; background: #f0efe8; border: 2px solid #ccc; display: flex; align-items: center; justify-content: center; }
-  .feedback { position: absolute; pointer-events: none; font-size: 20px; font-weight: 500; animation: float 0.9s ease-out forwards; z-index: 200; }
-  @keyframes float { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-54px)} }
-  #progress-bar { height: 10px; background: #ddd; border-radius: 5px; margin-bottom: 14px; }
-  #progress-fill { height: 10px; border-radius: 5px; background: linear-gradient(90deg, #1D9E75, #f0a500); transition: width 0.3s; }
-  #tabs { display: flex; gap: 6px; margin-bottom: 12px; }
-  .tab { padding: 7px 14px; border-radius: 8px; font-size: 13px; cursor: pointer; border: 1px solid #ddd; background: #fff; color: #888; }
-  .tab.active { background: #f0efe8; color: #111; font-weight: 500; border-color: #bbb; }
-  #result-overlay { position: absolute; inset: 0; background: rgba(255,255,255,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; z-index: 300; }
-  #result-overlay h2 { font-size: 40px; margin-bottom: 8px; }
-  #result-overlay p { font-size: 18px; color: #444; margin-bottom: 20px; font-weight: 500; }
-  #result-overlay button { padding: 10px 28px; border-radius: 8px; background: #1D9E75; color: white; border: none; font-size: 15px; font-weight: 500; cursor: pointer; }
-  #result-overlay button:hover { background: #0F6E56; }
-  .cart-label { position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #BA7517; font-weight: 500; white-space: nowrap; }
+* { box-sizing:border-box; margin:0; padding:0; user-select:none; }
+body { font-family:sans-serif; background:#f5f5f0; }
+#app { padding:16px; max-width:680px; margin:0 auto; }
+#header { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+#title { font-size:20px; font-weight:500; color:#111; }
+#sboard { display:flex; gap:10px; }
+.sc { background:#f0efe8; border-radius:8px; padding:5px 13px; font-size:13px; color:#666; }
+.sc span { font-weight:500; color:#111; font-size:15px; }
+#tabs { display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap; }
+.tab { padding:7px 13px; border-radius:8px; font-size:13px; cursor:pointer; border:1px solid #ccc; background:#fff; color:#888; }
+.tab.active { background:#f0efe8; color:#111; font-weight:500; border-color:#aaa; }
+.tab.easy { border-color:#1D9E75; color:#1D9E75; }
+.tab.easy.active { background:#E1F5EE; color:#0F6E56; border-color:#1D9E75; }
+.tab.hard { border-color:#E24B4A; color:#E24B4A; }
+.tab.hard.active { background:#FCEBEB; color:#A32D2D; border-color:#E24B4A; }
+#mbar { background:#f0efe8; border-radius:12px; padding:11px 15px; margin-bottom:12px; display:flex; align-items:center; gap:12px; }
+#micon { font-size:22px; width:32px; text-align:center; }
+#mtext { font-size:14px; font-weight:500; color:#111; }
+#msub { font-size:12px; color:#888; margin-top:2px; }
+#pbar { height:10px; background:#ddd; border-radius:5px; margin-bottom:12px; }
+#pfill { height:10px; border-radius:5px; background:#1D9E75; transition:width 0.25s; }
+#game { position:relative; width:100%; height:360px; background:#fff; border:1px solid #ddd; border-radius:12px; overflow:hidden; }
+.balloon { position:absolute; display:flex; align-items:center; justify-content:center; border-radius:50%; cursor:pointer; }
+.balloon:hover { transform:scale(1.15); }
+.balloon.pop { animation:pop 0.25s ease-out forwards !important; transition:none !important; }
+@keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.6)} 100%{transform:scale(0)} }
+.target { position:absolute; display:flex; align-items:center; justify-content:center; border-radius:50%; cursor:pointer; transition:transform 0.1s; }
+.target:hover { transform:scale(1.12); }
+.target.pop { animation:pop 0.2s ease-out forwards !important; }
+.box { position:absolute; cursor:pointer; font-size:38px; display:flex; align-items:center; justify-content:center; width:72px; height:72px; border-radius:12px; background:#f0efe8; border:2px solid #ccc; animation:wobble 2.5s ease-in-out infinite; }
+.box:hover { transform:scale(1.12); }
+@keyframes wobble { 0%,100%{transform:rotate(-4deg) scale(1)} 50%{transform:rotate(4deg) scale(1.05)} }
+.box.opened { animation:openPop 0.3s ease forwards !important; }
+@keyframes openPop { 0%{transform:scale(1)} 50%{transform:scale(1.4) rotate(15deg)} 100%{transform:scale(0)} }
+.fruit { position:absolute; cursor:grab; font-size:36px; display:flex; align-items:center; justify-content:center; width:64px; height:64px; border-radius:12px; border:2px solid #ccc; background:#fff; animation:fruitBounce 1.2s ease-in-out infinite; }
+.fruit:hover { border-color:#1D9E75; }
+.fruit.dragging { cursor:grabbing; opacity:0.9; animation:none; z-index:100; border-color:#1D9E75; }
+@keyframes fruitBounce { 0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-8px) rotate(3deg)} }
+.dzone { position:absolute; border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:40px; transition:all 0.2s; border:2.5px dashed #ccc; }
+.dzone.cart { width:100px; height:100px; border-color:#BA7517; }
+.dzone.basket { width:86px; height:86px; border-color:#1D9E75; }
+.dzone.lit { transform:scale(1.1); }
+.dzone.cart.lit { background:#FAEEDA; border-color:#BA7517; }
+.dzone.basket.lit { background:#E1F5EE; border-color:#1D9E75; }
+.dzone.hit { animation:dzPop 0.35s ease; }
+@keyframes dzPop { 0%{transform:scale(1)} 40%{transform:scale(1.22)} 100%{transform:scale(1)} }
+.dzlbl { font-size:11px; margin-top:2px; font-weight:500; white-space:nowrap; color:#BA7517; }
+.dzone.basket .dzlbl { color:#1D9E75; }
+.fb { position:absolute; pointer-events:none; font-size:22px; font-weight:500; animation:fbUp 1s ease-out forwards; z-index:200; }
+@keyframes fbUp { 0%{opacity:1;transform:translateY(0) scale(1.1)} 100%{opacity:0;transform:translateY(-65px) scale(0.8)} }
+#overlay { position:absolute; inset:0; background:rgba(255,255,255,0.96); display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:12px; z-index:300; }
+#overlay h2 { font-size:44px; margin-bottom:6px; }
+#overlay p { font-size:17px; color:#444; margin-bottom:18px; font-weight:500; }
+#overlay button { padding:10px 28px; border-radius:8px; background:#1D9E75; color:white; border:none; font-size:15px; font-weight:500; cursor:pointer; }
+#overlay button:hover { background:#0F6E56; }
+.badge { display:inline-block; font-size:11px; padding:2px 8px; border-radius:20px; margin-left:6px; font-weight:500; }
+.badge-easy { background:#E1F5EE; color:#0F6E56; }
+.badge-hard { background:#FCEBEB; color:#A32D2D; }
 </style>
 </head>
 <body>
 <div id="app">
   <div id="header">
     <div id="title">🖱️ 마우스 연습 게임</div>
-    <div id="score-board">
-      <div class="score-item">점수 <span id="score">0</span> / 1000</div>
-      <div class="score-item">⭐ <span id="stars">0</span> / 3</div>
+    <div id="sboard">
+      <div class="sc">점수 <span id="scEl">0</span> / <span id="goalEl">1000</span></div>
+      <div class="sc">⭐ <span id="stEl">0</span> / 3</div>
     </div>
   </div>
   <div id="tabs">
-    <div class="tab active" data-mode="click">🎯 클릭</div>
-    <div class="tab" data-mode="dblclick">👆 두 번 클릭</div>
-    <div class="tab" data-mode="drag">🛒 드래그&드롭</div>
-    <div class="tab" data-mode="trail">✏️ 그림 그리기</div>
+    <div class="tab easy" data-m="click-easy">🎯 클릭 <span class="badge badge-easy">초보</span></div>
+    <div class="tab hard" data-m="click-hard">🎯 클릭 <span class="badge badge-hard">중급</span></div>
+    <div class="tab" data-m="dbl">👆 두 번 클릭</div>
+    <div class="tab" data-m="drag">🛒 드래그&드롭</div>
+    <div class="tab" data-m="draw">✏️ 그림 그리기</div>
   </div>
-  <div id="mission-bar">
-    <div id="mission-icon">🎯</div>
+  <div id="mbar">
+    <div id="micon">🎯</div>
     <div>
-      <div id="mission-text">풍선을 클릭해서 터뜨려요!</div>
-      <div id="mission-sub">남은 점수: <span id="score-left">1000</span>점</div>
+      <div id="mtext">풍선을 클릭해서 터뜨려요!</div>
+      <div id="msub">남은 점수: <span id="sleft">1000</span>점</div>
     </div>
   </div>
-  <div id="progress-bar"><div id="progress-fill" style="width:0%"></div></div>
-  <div id="game-area"></div>
+  <div id="pbar"><div id="pfill" style="width:0%"></div></div>
+  <div id="game"></div>
 </div>
 
 <script>
-const gameArea   = document.getElementById('game-area');
-const scoreEl    = document.getElementById('score');
-const starsEl    = document.getElementById('stars');
-const missionTextEl = document.getElementById('mission-text');
-const missionIconEl = document.getElementById('mission-icon');
-const missionSubEl  = document.getElementById('mission-sub');
-const scoreLeftEl   = document.getElementById('score-left');
-const progressFill  = document.getElementById('progress-fill');
-const progressBar   = document.getElementById('progress-bar');
-const scoreBoardEl  = document.getElementById('score-board');
+const G      = document.getElementById('game');
+const scEl   = document.getElementById('scEl');
+const goalEl = document.getElementById('goalEl');
+const stEl   = document.getElementById('stEl');
+const mtEl   = document.getElementById('mtext');
+const miEl   = document.getElementById('micon');
+const msEl   = document.getElementById('msub');
+const slEl   = document.getElementById('sleft');
+const pf     = document.getElementById('pfill');
+const pb     = document.getElementById('pbar');
+const sb     = document.getElementById('sboard');
 
-const SCORE_GOAL = 1000;
-let score = 0;
-let mode = 'click';
-let done = false;
+const GOALS  = { 'click-easy':1000, 'click-hard':1000, dbl:1000, drag:1000, draw:0 };
+const EMOJIS = ['🎈','🎉','⭐','🌟','💫','🍭','🍬','🎀','🎵','🏆','🌈','🦋'];
+const FRUITS = ['🍎','🍊','🍋','🍇','🍓','🍑','🍍','🥝','🍒','🍆'];
+const BOXES  = ['📦','🎁','📫','🗃️','📮','🧸','🪀','🎯'];
 
-const BALLOONS = ['🎈','🎉','⭐','🌟','💫','🍎','🍊','🍋','🍇','🍓'];
-const FRUITS   = ['🍎','🍊','🍋','🍇','🍓'];
-const BOXES    = ['📦','🎁','📫','🗃️','📮'];
+let score=0, mode='click-easy', done=false, goal=1000;
 
-function rnd(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+const rnd    = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+const rndPts = (mn,mx) => Math.round(rnd(mn,mx)/10)*10;
 
-function randPts(min, max) {
-  const val = rnd(min, max);
-  return Math.round(val / 10) * 10;
+function feedback(x,y,pts,color){
+  const el=document.createElement('div');
+  el.className='fb';
+  el.textContent='+'+pts+'점!';
+  el.style.cssText=`left:${x-20}px;top:${y-10}px;color:${color||'#1D9E75'};`;
+  G.appendChild(el);
+  setTimeout(()=>el.remove(),1000);
 }
 
-function showFeedback(x, y, pts, color) {
-  const el = document.createElement('div');
-  el.className = 'feedback';
-  el.textContent = '+' + pts + '점!';
-  el.style.cssText = `left:${x}px;top:${y}px;color:${color || '#1D9E75'};`;
-  gameArea.appendChild(el);
-  setTimeout(() => el.remove(), 900);
+function addScore(pts,x,y,color){
+  if(done)return;
+  score=Math.min(goal,score+pts);
+  scEl.textContent=score;
+  slEl.textContent=Math.max(0,goal-score);
+  stEl.textContent=Math.min(3,Math.floor(score/(goal/3)));
+  pf.style.width=(score/goal*100).toFixed(1)+'%';
+  feedback(x,y,pts,color);
+  if(score>=goal){done=true;setTimeout(showWin,500);}
 }
 
-function addScore(pts, x, y, color) {
-  if (done) return;
-  score = Math.min(SCORE_GOAL, score + pts);
-  scoreEl.textContent = score;
-  scoreLeftEl.textContent = Math.max(0, SCORE_GOAL - score);
-  starsEl.textContent = Math.min(3, Math.floor(score / (SCORE_GOAL / 3)));
-  progressFill.style.width = (score / SCORE_GOAL * 100).toFixed(1) + '%';
-  showFeedback(x, y, pts, color);
-  if (score >= SCORE_GOAL) {
-    done = true;
-    setTimeout(showResult, 500);
-  }
+function showWin(){
+  G.innerHTML='';
+  const o=document.createElement('div');
+  o.id='overlay';
+  o.innerHTML=`<h2>🎉🏆🎉</h2><p>${goal}점 달성! 정말 잘했어요!</p><button onclick="resetGame()">다시 하기</button>`;
+  G.appendChild(o);
 }
 
-function showResult() {
-  gameArea.innerHTML = '';
-  const ol = document.createElement('div');
-  ol.id = 'result-overlay';
-  ol.innerHTML = `<h2>🎉🎊🎉</h2><p>1000점 달성! 최고예요!</p><button onclick="resetGame()">다시 하기</button>`;
-  gameArea.appendChild(ol);
-}
-
-function resetGame() {
-  score = 0; done = false;
-  scoreEl.textContent = 0;
-  scoreLeftEl.textContent = SCORE_GOAL;
-  starsEl.textContent = 0;
-  progressFill.style.width = '0%';
-  gameArea.innerHTML = '';
+function resetGame(){
+  score=0; done=false;
+  scEl.textContent=0; stEl.textContent=0; pf.style.width='0%';
+  G.innerHTML='';
   startMode(mode);
 }
 
-function startMode(m) {
-  mode = m;
-  gameArea.innerHTML = '';
+function startMode(m){
+  mode=m; goal=GOALS[m]||1000;
+  G.innerHTML=''; score=0; done=false;
+  scEl.textContent=0; stEl.textContent=0; pf.style.width='0%';
+  goalEl.textContent=goal; slEl.textContent=goal;
 
-  const info = {
-    click:    { icon:'🎯', text:'풍선을 클릭해서 터뜨려요! (10~30점 랜덤)' },
-    dblclick: { icon:'👆', text:'상자를 두 번 클릭해서 열어요! (10~30점 랜덤)' },
-    drag:     { icon:'🛒', text:'🛒 카트 100~300점 / 🧺 바구니 50~150점' },
-    trail:    { icon:'✏️', text:'마우스를 누른 채 자유롭게 그려봐요!' }
+  const cfg={
+    'click-easy':{icon:'🎯',text:'풍선을 클릭해서 터뜨려요! ⭐ 초보 (10~30점)',sub:true},
+    'click-hard':{icon:'🎯',text:'올라가는 풍선을 빠르게 터뜨려요! 🔥 중급 (10~30점)',sub:true},
+    dbl:  {icon:'👆',text:'상자를 두 번 클릭해서 열어요! (10~30점 랜덤)',sub:true},
+    drag: {icon:'🛒',text:'🛒 카트 100~300점 / 🧺 바구니 50~150점',sub:true},
+    draw: {icon:'✏️',text:'마우스 누른 채 자유롭게 그려봐요!',sub:false}
   };
+  const c=cfg[m];
+  miEl.textContent=c.icon; mtEl.textContent=c.text;
+  sb.style.display=c.sub?'flex':'none';
+  pb.style.display=c.sub?'block':'none';
+  msEl.style.display=c.sub?'block':'none';
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.m===m));
 
-  missionIconEl.textContent = info[m].icon;
-  missionTextEl.textContent = info[m].text;
-
-  if (m === 'trail') {
-    scoreBoardEl.style.display = 'none';
-    progressBar.style.display = 'none';
-    missionSubEl.style.display = 'none';
-  } else {
-    scoreBoardEl.style.display = 'flex';
-    progressBar.style.display = 'block';
-    missionSubEl.style.display = 'block';
-  }
-
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
-
-  if (m === 'click')         startClick();
-  else if (m === 'dblclick') startDblClick();
-  else if (m === 'drag')     startDrag();
-  else                       startTrail();
+  if(m==='click-easy') startClickEasy();
+  else if(m==='click-hard') startClickHard();
+  else if(m==='dbl') startDbl();
+  else if(m==='drag') startDrag();
+  else startDraw();
 }
 
-/* ── 클릭 ── */
-function startClick() {
-  function spawn() {
-    if (done) return;
-    const el = document.createElement('div');
-    el.className = 'target';
-    const size = rnd(44, 64);
-    el.style.cssText = `width:${size}px;height:${size}px;left:${rnd(10,570)}px;top:${rnd(10,270)}px;font-size:${Math.round(size*0.7)}px;`;
-    el.textContent = BALLOONS[rnd(0, BALLOONS.length - 1)];
-    let used = false;
-    el.addEventListener('click', e => {
-      if (done || used) return;
-      used = true;
-      el.classList.add('clicked');
-      const r = gameArea.getBoundingClientRect();
-      const pts = randPts(10, 30);
-      addScore(pts, e.clientX - r.left - 20, e.clientY - r.top - 10);
-      setTimeout(() => { if (el.parentNode) el.remove(); spawn(); }, 200);
+function startClickEasy(){
+  const active=new Set();
+  function spawn(){
+    if(done||active.size>=8)return;
+    const el=document.createElement('div');
+    el.className='target';
+    const sz=rnd(52,76);
+    el.style.cssText=`width:${sz}px;height:${sz}px;left:${rnd(10,G.offsetWidth-sz-10)}px;top:${rnd(10,G.offsetHeight-sz-10)}px;font-size:${Math.round(sz*0.65)}px;`;
+    el.textContent=EMOJIS[rnd(0,EMOJIS.length-1)];
+    active.add(el);
+    let used=false;
+    el.addEventListener('click',e=>{
+      if(done||used)return;
+      used=true; active.delete(el);
+      el.classList.add('pop');
+      const r=G.getBoundingClientRect();
+      addScore(rndPts(10,30),e.clientX-r.left,e.clientY-r.top);
+      setTimeout(()=>{el.remove();spawn();spawn();},220);
     });
-    gameArea.appendChild(el);
-    const life = rnd(2500, 4000);
-    setTimeout(() => { if (el.parentNode && !used) { el.remove(); spawn(); } }, life);
+    G.appendChild(el);
+    setTimeout(()=>{
+      if(el.parentNode&&!used){active.delete(el);el.remove();spawn();}
+    },rnd(3500,5500));
   }
-  for (let i = 0; i < 6; i++) setTimeout(spawn, i * 250);
+  for(let i=0;i<7;i++) setTimeout(spawn,i*300);
+  setInterval(()=>{if(!done&&active.size<6)spawn();},900);
 }
 
-/* ── 두 번 클릭 ── */
-function startDblClick() {
-  function spawnBox() {
-    if (done) return;
-    const el = document.createElement('div');
-    el.className = 'dbl-target';
-    el.style.cssText = `left:${rnd(20,540)}px;top:${rnd(20,255)}px;`;
-    el.textContent = BOXES[rnd(0, BOXES.length - 1)];
-    let clicks = 0, timer, used = false;
-    el.addEventListener('click', e => {
-      if (done || used) return;
+function startClickHard(){
+  const active=new Set();
+  function spawnBalloon(){
+    if(done||active.size>=6)return;
+    const el=document.createElement('div');
+    el.className='balloon';
+    const sz=rnd(52,76);
+    const left=rnd(10,G.offsetWidth-sz-10);
+    const dur=rnd(5000,8000);
+    el.style.cssText=`width:${sz}px;height:${sz}px;left:${left}px;bottom:-${sz}px;font-size:${Math.round(sz*0.65)}px;position:absolute;transition:bottom ${dur}ms linear;cursor:pointer;border-radius:50%;display:flex;align-items:center;justify-content:center;`;
+    el.textContent=EMOJIS[rnd(0,EMOJIS.length-1)];
+    active.add(el); G.appendChild(el);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.bottom=(G.offsetHeight+sz)+'px';}));
+    let used=false;
+    el.addEventListener('click',e=>{
+      if(done||used)return;
+      used=true; active.delete(el);
+      el.style.transition='none';
+      el.classList.add('pop');
+      const r=G.getBoundingClientRect();
+      addScore(rndPts(10,30),e.clientX-r.left,e.clientY-r.top);
+      setTimeout(()=>{el.remove();spawnBalloon();},250);
+    });
+    setTimeout(()=>{
+      if(el.parentNode&&!used){active.delete(el);el.remove();spawnBalloon();}
+    },dur+200);
+  }
+  for(let i=0;i<5;i++) setTimeout(spawnBalloon,i*400);
+  setInterval(()=>{if(!done&&active.size<5)spawnBalloon();},1200);
+}
+
+function startDbl(){
+  const active=new Set();
+  function spawnBox(){
+    if(done||active.size>=6)return;
+    const el=document.createElement('div');
+    el.className='box';
+    el.style.cssText=`left:${rnd(16,G.offsetWidth-88)}px;top:${rnd(16,G.offsetHeight-88)}px;`;
+    el.textContent=BOXES[rnd(0,BOXES.length-1)];
+    active.add(el);
+    let clicks=0,timer,used=false;
+    el.addEventListener('click',e=>{
+      if(done||used)return;
       clicks++;
       clearTimeout(timer);
-      timer = setTimeout(() => { clicks = 0; }, 400);
-      if (clicks >= 2) {
-        used = true;
-        el.textContent = '🎊';
-        const r = gameArea.getBoundingClientRect();
-        const pts = randPts(10, 30);
-        addScore(pts, e.clientX - r.left - 20, e.clientY - r.top - 10);
-        setTimeout(() => { if (el.parentNode) el.remove(); spawnBox(); }, 400);
+      if(clicks===1){
+        el.style.transform='scale(1.18) rotate(8deg)';
+        timer=setTimeout(()=>{clicks=0;el.style.transform='';},450);
+      }
+      if(clicks>=2){
+        used=true; active.delete(el);
+        el.classList.add('opened'); el.textContent='🎊';
+        const r=G.getBoundingClientRect();
+        addScore(rndPts(10,30),e.clientX-r.left,e.clientY-r.top,'#534AB7');
+        setTimeout(()=>{el.remove();spawnBox();spawnBox();},350);
       }
     });
-    gameArea.appendChild(el);
+    G.appendChild(el);
+    setTimeout(()=>{
+      if(el.parentNode&&!used){active.delete(el);el.remove();spawnBox();}
+    },rnd(5000,9000));
   }
-  for (let i = 0; i < 5; i++) setTimeout(spawnBox, i * 350);
+  for(let i=0;i<5;i++) setTimeout(spawnBox,i*350);
+  setInterval(()=>{if(!done&&active.size<5)spawnBox();},1000);
 }
 
-/* ── 드래그&드롭 ── */
-function startDrag() {
-  const cartDrop = document.createElement('div');
-  cartDrop.className = 'drop-zone is-cart';
-  cartDrop.dataset.type = 'cart';
-  cartDrop.style.cssText = 'left:470px;top:120px;';
-  cartDrop.textContent = '🛒';
-  const cLbl = document.createElement('div');
-  cLbl.className = 'cart-label';
-  cLbl.textContent = '100~300점';
-  cartDrop.appendChild(cLbl);
-  gameArea.appendChild(cartDrop);
+function startDrag(){
+  const cart=document.createElement('div');
+  cart.className='dzone cart'; cart.dataset.t='cart';
+  cart.style.cssText='right:14px;top:140px;';
+  cart.innerHTML='🛒<div class="dzlbl">100~300점</div>';
+  G.appendChild(cart);
 
-  const basketDrop = document.createElement('div');
-  basketDrop.className = 'drop-zone';
-  basketDrop.dataset.type = 'basket';
-  basketDrop.style.cssText = 'left:470px;top:25px;';
-  basketDrop.textContent = '🧺';
-  const bLbl = document.createElement('div');
-  bLbl.className = 'cart-label';
-  bLbl.style.color = '#1D9E75';
-  bLbl.textContent = '50~150점';
-  basketDrop.appendChild(bLbl);
-  gameArea.appendChild(basketDrop);
+  const basket=document.createElement('div');
+  basket.className='dzone basket'; basket.dataset.t='basket';
+  basket.style.cssText='right:20px;top:22px;';
+  basket.innerHTML='🧺<div class="dzlbl">50~150점</div>';
+  G.appendChild(basket);
 
-  const hint = document.createElement('div');
-  hint.style.cssText = 'position:absolute;right:8px;bottom:10px;font-size:11px;color:#888;text-align:right;pointer-events:none;line-height:1.7;';
-  hint.innerHTML = '🛒 카트 = 100~300점<br>🧺 바구니 = 50~150점';
-  gameArea.appendChild(hint);
+  const hint=document.createElement('div');
+  hint.style.cssText='position:absolute;right:10px;bottom:10px;font-size:11px;color:#888;text-align:right;line-height:1.8;pointer-events:none;';
+  hint.innerHTML='🛒 카트 = 100~300점<br>🧺 바구니 = 50~150점';
+  G.appendChild(hint);
 
-  function spawnFruit() {
-    if (done) return;
-    const el = document.createElement('div');
-    el.className = 'draggable';
-    el.textContent = FRUITS[rnd(0, FRUITS.length - 1)];
-    el.style.left = rnd(20, 150) + 'px';
-    el.style.top  = rnd(20, 265) + 'px';
-    let sx, sy, sl, st, dragging = false, used = false;
+  const onScreen=new Set();
+  function spawnFruit(){
+    if(done||onScreen.size>=5)return;
+    const el=document.createElement('div');
+    el.className='fruit';
+    el.textContent=FRUITS[rnd(0,FRUITS.length-1)];
+    el.style.left=rnd(10,190)+'px';
+    el.style.top=rnd(10,G.offsetHeight-74)+'px';
+    onScreen.add(el);
+    let sx,sy,sl,st2,dragging=false,used=false;
 
-    el.addEventListener('mousedown', e => {
-      if (used) return;
-      e.preventDefault();
-      dragging = true;
+    el.addEventListener('mousedown',e=>{
+      if(used)return;
+      e.preventDefault(); dragging=true;
       el.classList.add('dragging');
-      sx = e.clientX; sy = e.clientY;
-      sl = parseInt(el.style.left); st = parseInt(el.style.top);
-      document.querySelectorAll('.drop-zone').forEach(dz => dz.classList.add('highlight'));
+      sx=e.clientX; sy=e.clientY;
+      sl=parseInt(el.style.left); st2=parseInt(el.style.top);
+      document.querySelectorAll('.dzone').forEach(d=>d.classList.add('lit'));
     });
-
-    const onMove = e => {
-      if (!dragging) return;
-      el.style.left = (sl + e.clientX - sx) + 'px';
-      el.style.top  = (st + e.clientY - sy) + 'px';
+    const mv=e=>{
+      if(!dragging)return;
+      el.style.left=(sl+e.clientX-sx)+'px';
+      el.style.top=(st2+e.clientY-sy)+'px';
     };
-    const onUp = () => {
-      if (!dragging) return;
-      dragging = false;
-      el.classList.remove('dragging');
-      document.querySelectorAll('.drop-zone').forEach(dz => dz.classList.remove('highlight'));
-      if (used) return;
-      const er = el.getBoundingClientRect();
-      document.querySelectorAll('.drop-zone').forEach(dz => {
-        if (used) return;
-        const dr = dz.getBoundingClientRect();
-        const ox = Math.max(0, Math.min(er.right, dr.right) - Math.max(er.left, dr.left));
-        const oy = Math.max(0, Math.min(er.bottom, dr.bottom) - Math.max(er.top, dr.top));
-        if (ox * oy > 600) {
-          used = true;
-          const pts = dz.dataset.type === 'cart'
-            ? randPts(100, 300)
-            : randPts(50, 150);
-          dz.classList.add('matched');
-          addScore(pts, parseInt(el.style.left) + 10, parseInt(el.style.top), dz.dataset.type === 'cart' ? '#BA7517' : '#1D9E75');
+    const up=()=>{
+      if(!dragging)return;
+      dragging=false; el.classList.remove('dragging');
+      document.querySelectorAll('.dzone').forEach(d=>d.classList.remove('lit'));
+      if(used)return;
+      const er=el.getBoundingClientRect();
+      document.querySelectorAll('.dzone').forEach(dz=>{
+        if(used)return;
+        const dr=dz.getBoundingClientRect();
+        const ox=Math.max(0,Math.min(er.right,dr.right)-Math.max(er.left,dr.left));
+        const oy=Math.max(0,Math.min(er.bottom,dr.bottom)-Math.max(er.top,dr.top));
+        if(ox*oy>400){
+          used=true; onScreen.delete(el);
+          const pts=dz.dataset.t==='cart'?rndPts(100,300):rndPts(50,150);
+          const col=dz.dataset.t==='cart'?'#BA7517':'#1D9E75';
+          dz.classList.add('hit');
+          addScore(pts,parseInt(el.style.left)+20,parseInt(el.style.top),col);
           el.remove();
-          setTimeout(() => { dz.classList.remove('matched'); spawnFruit(); }, 400);
+          setTimeout(()=>{dz.classList.remove('hit');spawnFruit();spawnFruit();},350);
         }
       });
     };
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-    gameArea.appendChild(el);
+    document.addEventListener('mousemove',mv);
+    document.addEventListener('mouseup',up);
+    G.appendChild(el);
   }
-
-  for (let i = 0; i < 3; i++) setTimeout(spawnFruit, i * 200);
+  for(let i=0;i<4;i++) setTimeout(spawnFruit,i*200);
+  setInterval(()=>{if(!done&&onScreen.size<4)spawnFruit();},500);
 }
 
-/* ── 그림 그리기 ── */
-function startTrail() {
-  let drawing = false;
-  const canvas = document.createElement('canvas');
-  canvas.width  = gameArea.offsetWidth || 648;
-  canvas.height = 340;
-  canvas.style.cssText = 'position:absolute;top:0;left:0;cursor:crosshair;';
-  gameArea.appendChild(canvas);
-  const ctx = canvas.getContext('2d');
-  const colors = ['#E24B4A','#378ADD','#1D9E75','#BA7517','#993556','#534AB7'];
-  let ci = 0;
+function startDraw(){
+  let drawing=false;
+  const canvas=document.createElement('canvas');
+  canvas.width=G.offsetWidth||648; canvas.height=G.offsetHeight||360;
+  canvas.style.cssText='position:absolute;top:0;left:0;cursor:crosshair;';
+  G.appendChild(canvas);
+  const ctx=canvas.getContext('2d');
+  const colors=['#E24B4A','#378ADD','#1D9E75','#BA7517','#993556','#534AB7','#f0a500'];
+  let ci=0,lw=5;
 
-  const hint = document.createElement('div');
-  hint.style.cssText = 'position:absolute;bottom:12px;left:0;right:0;text-align:center;font-size:14px;color:#888;pointer-events:none;';
-  hint.textContent = '마우스를 누른 채로 그림을 그려봐요 🎨';
-  gameArea.appendChild(hint);
+  const hint=document.createElement('div');
+  hint.style.cssText='position:absolute;bottom:12px;left:0;right:0;text-align:center;font-size:14px;color:#888;pointer-events:none;';
+  hint.textContent='마우스를 누른 채로 그림을 그려봐요 🎨';
+  G.appendChild(hint);
 
-  const row = document.createElement('div');
-  row.style.cssText = 'position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:10;';
-  colors.forEach((c, i) => {
-    const btn = document.createElement('div');
-    btn.style.cssText = `width:24px;height:24px;border-radius:50%;background:${c};cursor:pointer;border:2px solid white;`;
-    btn.addEventListener('click', () => { ci = i; });
+  const row=document.createElement('div');
+  row.style.cssText='position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:10;align-items:center;';
+  colors.forEach((c,i)=>{
+    const btn=document.createElement('div');
+    btn.style.cssText=`width:22px;height:22px;border-radius:50%;background:${c};cursor:pointer;border:2px solid white;`;
+    btn.addEventListener('click',()=>ci=i);
     row.appendChild(btn);
   });
-  gameArea.appendChild(row);
+  const szSlider=document.createElement('input');
+  szSlider.type='range'; szSlider.min=2; szSlider.max=20; szSlider.value=5; szSlider.step=1;
+  szSlider.style.cssText='width:60px;cursor:pointer;';
+  szSlider.addEventListener('input',()=>lw=parseInt(szSlider.value));
+  row.appendChild(szSlider);
+  G.appendChild(row);
 
-  const clrBtn = document.createElement('button');
-  clrBtn.textContent = '지우기';
-  clrBtn.style.cssText = 'position:absolute;top:10px;left:10px;padding:4px 12px;font-size:13px;border-radius:8px;z-index:10;cursor:pointer;';
-  clrBtn.addEventListener('click', () => ctx.clearRect(0, 0, canvas.width, canvas.height));
-  gameArea.appendChild(clrBtn);
+  const clrBtn=document.createElement('button');
+  clrBtn.textContent='지우기';
+  clrBtn.style.cssText='position:absolute;top:10px;left:10px;padding:4px 12px;font-size:13px;border-radius:8px;z-index:10;cursor:pointer;';
+  clrBtn.addEventListener('click',()=>ctx.clearRect(0,0,canvas.width,canvas.height));
+  G.appendChild(clrBtn);
 
-  canvas.addEventListener('mousedown', e => {
-    drawing = true;
-    const r = canvas.getBoundingClientRect();
-    ctx.beginPath(); ctx.moveTo(e.clientX - r.left, e.clientY - r.top);
-    ctx.strokeStyle = colors[ci]; ctx.lineWidth = 5; ctx.lineCap = 'round';
-    hint.style.display = 'none';
+  canvas.addEventListener('mousedown',e=>{
+    drawing=true; hint.style.display='none';
+    const r=canvas.getBoundingClientRect();
+    ctx.beginPath(); ctx.moveTo(e.clientX-r.left,e.clientY-r.top);
+    ctx.strokeStyle=colors[ci]; ctx.lineWidth=lw; ctx.lineCap='round'; ctx.lineJoin='round';
   });
-  canvas.addEventListener('mousemove', e => {
-    if (!drawing) return;
-    const r = canvas.getBoundingClientRect();
-    ctx.lineTo(e.clientX - r.left, e.clientY - r.top);
-    ctx.stroke(); ctx.beginPath(); ctx.moveTo(e.clientX - r.left, e.clientY - r.top);
+  canvas.addEventListener('mousemove',e=>{
+    if(!drawing)return;
+    const r=canvas.getBoundingClientRect();
+    ctx.lineTo(e.clientX-r.left,e.clientY-r.top);
+    ctx.stroke(); ctx.beginPath(); ctx.moveTo(e.clientX-r.left,e.clientY-r.top);
+    ctx.strokeStyle=colors[ci]; ctx.lineWidth=lw; ctx.lineCap='round'; ctx.lineJoin='round';
   });
-  canvas.addEventListener('mouseup', () => { drawing = false; });
-  canvas.addEventListener('mouseleave', () => { drawing = false; });
+  canvas.addEventListener('mouseup',()=>drawing=false);
+  canvas.addEventListener('mouseleave',()=>drawing=false);
 }
 
-document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
-  if (!done) { score = 0; scoreEl.textContent = 0; scoreLeftEl.textContent = SCORE_GOAL; starsEl.textContent = 0; progressFill.style.width = '0%'; }
-  done = false;
-  startMode(t.dataset.mode);
-}));
-
-startMode('click');
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>startMode(t.dataset.m)));
+startMode('click-easy');
 </script>
 </body>
 </html>
