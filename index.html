@@ -128,8 +128,13 @@ const FRUITS=['🍎','🍊','🍋','🍇','🍓','🍑','🍍','🥝','🍒','�
 const BOXES=['📦','🎁','📫','🗃️','📮','🧸','🪀','🎯'];
 
 let score=0,mode='click-easy',done=false,goal=1000;
+let _intervals=[],_timeouts=[];
+
 const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 const rndPts=(mn,mx)=>Math.round(rnd(mn,mx)/10)*10;
+function si(fn,ms){const id=setInterval(fn,ms);_intervals.push(id);return id;}
+function st(fn,ms){const id=setTimeout(fn,ms);_timeouts.push(id);return id;}
+function clearAll(){_intervals.forEach(id=>clearInterval(id));_timeouts.forEach(id=>clearTimeout(id));_intervals=[];_timeouts=[];}
 
 function feedback(x,y,pts,color){
   const el=document.createElement('div');el.className='fbtxt';
@@ -148,9 +153,10 @@ function showWin(){
   o.innerHTML=`<h2>🎉🏆🎉</h2><p>${goal}점 달성! 잘했어요!</p><div class="ov-btns"><button class="ov-btn" onclick="resetGame()">다시 하기</button></div>`;
   G.appendChild(o);
 }
-function resetGame(){score=0;done=false;scEl.textContent=0;stEl.textContent=0;pf.style.width='0%';G.innerHTML='';startMode(mode);}
+function resetGame(){clearAll();score=0;done=false;scEl.textContent=0;stEl.textContent=0;pf.style.width='0%';G.innerHTML='';startMode(mode);}
 
 function startMode(m){
+  clearAll();
   mode=m;goal=GOALS[m]||1000;G.innerHTML='';score=0;done=false;
   scEl.textContent=0;stEl.textContent=0;pf.style.width='0%';goalEl.textContent=goal;slEl.textContent=goal;
   const isPz=m==='puzzle'||m==='draw';
@@ -181,10 +187,12 @@ function startClickEasy(){
     const sz=rnd(50,74);
     el.style.cssText=`width:${sz}px;height:${sz}px;left:${rnd(10,G.offsetWidth-sz-10)}px;top:${rnd(10,G.offsetHeight-sz-10)}px;font-size:${Math.round(sz*.65)}px;`;
     el.textContent=EMOJIS[rnd(0,EMOJIS.length-1)];active.add(el);let used=false;
-    el.addEventListener('click',e=>{if(done||used)return;used=true;active.delete(el);el.classList.add('pop');const r=G.getBoundingClientRect();addScore(rndPts(10,30),e.clientX-r.left,e.clientY-r.top);setTimeout(()=>{el.remove();spawn();spawn();},220);});
-    G.appendChild(el);setTimeout(()=>{if(el.parentNode&&!used){active.delete(el);el.remove();spawn();}},rnd(3500,5500));
+    el.addEventListener('click',e=>{if(done||used)return;used=true;active.delete(el);el.classList.add('pop');const r=G.getBoundingClientRect();addScore(rndPts(10,30),e.clientX-r.left,e.clientY-r.top);st(()=>{el.remove();spawn();spawn();},220);});
+    G.appendChild(el);
+    st(()=>{if(el.parentNode&&!used){active.delete(el);el.remove();spawn();}},rnd(3500,5500));
   }
-  for(let i=0;i<7;i++)setTimeout(spawn,i*300);setInterval(()=>{if(!done&&active.size<6)spawn();},900);
+  for(let i=0;i<7;i++)st(spawn,i*300);
+  si(()=>{if(!done&&active.size<6)spawn();},900);
 }
 
 function startClickHard(){
@@ -197,10 +205,11 @@ function startClickHard(){
     el.textContent=EMOJIS[rnd(0,EMOJIS.length-1)];active.add(el);G.appendChild(el);
     requestAnimationFrame(()=>requestAnimationFrame(()=>{el.style.bottom=(G.offsetHeight+sz)+'px';}));
     let used=false;
-    el.addEventListener('click',e=>{if(done||used)return;used=true;active.delete(el);el.style.transition='none';el.classList.add('pop');const r=G.getBoundingClientRect();addScore(rndPts(10,30),e.clientX-r.left,e.clientY-r.top);setTimeout(()=>{el.remove();spawnB();},250);});
-    setTimeout(()=>{if(el.parentNode&&!used){active.delete(el);el.remove();spawnB();}},dur+200);
+    el.addEventListener('click',e=>{if(done||used)return;used=true;active.delete(el);el.style.transition='none';el.classList.add('pop');const r=G.getBoundingClientRect();addScore(rndPts(10,30),e.clientX-r.left,e.clientY-r.top);st(()=>{el.remove();spawnB();},250);});
+    st(()=>{if(el.parentNode&&!used){active.delete(el);el.remove();spawnB();}},dur+200);
   }
-  for(let i=0;i<5;i++)setTimeout(spawnB,i*400);setInterval(()=>{if(!done&&active.size<5)spawnB();},1200);
+  for(let i=0;i<5;i++)st(spawnB,i*400);
+  si(()=>{if(!done&&active.size<5)spawnB();},1200);
 }
 
 function startDbl(){
@@ -213,11 +222,13 @@ function startDbl(){
     el.addEventListener('click',e=>{
       if(done||used)return;clicks++;clearTimeout(timer);
       if(clicks===1){el.style.transform='scale(1.18) rotate(8deg)';timer=setTimeout(()=>{clicks=0;el.style.transform='';},450);}
-      if(clicks>=2){used=true;active.delete(el);el.classList.add('opened');el.textContent='🎊';const r=G.getBoundingClientRect();addScore(rndPts(10,30),e.clientX-r.left,e.clientY-r.top,'#534AB7');setTimeout(()=>{el.remove();spawnBox();spawnBox();},350);}
+      if(clicks>=2){used=true;active.delete(el);el.classList.add('opened');el.textContent='🎊';const r=G.getBoundingClientRect();addScore(rndPts(10,30),e.clientX-r.left,e.clientY-r.top,'#534AB7');st(()=>{el.remove();spawnBox();spawnBox();},350);}
     });
-    G.appendChild(el);setTimeout(()=>{if(el.parentNode&&!used){active.delete(el);el.remove();spawnBox();}},rnd(5000,9000));
+    G.appendChild(el);
+    st(()=>{if(el.parentNode&&!used){active.delete(el);el.remove();spawnBox();}},rnd(5000,9000));
   }
-  for(let i=0;i<5;i++)setTimeout(spawnBox,i*350);setInterval(()=>{if(!done&&active.size<5)spawnBox();},1000);
+  for(let i=0;i<5;i++)st(spawnBox,i*350);
+  si(()=>{if(!done&&active.size<5)spawnBox();},1000);
 }
 
 function startDrag(){
@@ -236,11 +247,12 @@ function startDrag(){
     const up=()=>{
       if(!dragging)return;dragging=false;el.classList.remove('dragging');document.querySelectorAll('.dzone').forEach(d=>d.classList.remove('lit'));if(used)return;
       const er=el.getBoundingClientRect();
-      document.querySelectorAll('.dzone').forEach(dz=>{if(used)return;const dr=dz.getBoundingClientRect();const ox=Math.max(0,Math.min(er.right,dr.right)-Math.max(er.left,dr.left));const oy=Math.max(0,Math.min(er.bottom,dr.bottom)-Math.max(er.top,dr.top));if(ox*oy>400){used=true;onScreen.delete(el);const pts=dz.dataset.t==='cart'?rndPts(100,300):rndPts(50,150);const col=dz.dataset.t==='cart'?'#BA7517':'#1D9E75';dz.classList.add('hit');addScore(pts,parseInt(el.style.left)+20,parseInt(el.style.top),col);el.remove();setTimeout(()=>{dz.classList.remove('hit');spawnFruit();spawnFruit();},350);}});
+      document.querySelectorAll('.dzone').forEach(dz=>{if(used)return;const dr=dz.getBoundingClientRect();const ox=Math.max(0,Math.min(er.right,dr.right)-Math.max(er.left,dr.left));const oy=Math.max(0,Math.min(er.bottom,dr.bottom)-Math.max(er.top,dr.top));if(ox*oy>400){used=true;onScreen.delete(el);const pts=dz.dataset.t==='cart'?rndPts(100,300):rndPts(50,150);const col=dz.dataset.t==='cart'?'#BA7517':'#1D9E75';dz.classList.add('hit');addScore(pts,parseInt(el.style.left)+20,parseInt(el.style.top),col);el.remove();st(()=>{dz.classList.remove('hit');spawnFruit();spawnFruit();},350);}});
     };
     document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);G.appendChild(el);
   }
-  for(let i=0;i<4;i++)setTimeout(spawnFruit,i*200);setInterval(()=>{if(!done&&onScreen.size<4)spawnFruit();},500);
+  for(let i=0;i<4;i++)st(spawnFruit,i*200);
+  si(()=>{if(!done&&onScreen.size<4)spawnFruit();},500);
 }
 
 const PZ_DATA=[
@@ -262,32 +274,23 @@ function makeEmojiCanvas(emoji,size,grid){
 function startPuzzle(lv){
   G.innerHTML='';
   let _onMove=null,_onUp=null;
-  const {emoji,grid,name}=PZ_DATA[lv-1];
+  const {emoji,grid}=PZ_DATA[lv-1];
   const total=grid*grid;let placed=0;
   const GW=G.offsetWidth||640;const GH=G.offsetHeight||420;
-  const TOP_H=36,BOT_H=110,GAP=16;
-  const boardAreaH=GH-TOP_H-BOT_H-GAP*2;
-  const boardAreaW=(GW-GAP*3)/2;
-  const boardSize=Math.floor(Math.min(boardAreaH,boardAreaW,180));
-  const ps=Math.floor(boardSize/grid);
-  const bs=ps*grid;
-  const trayMaxPs=Math.min(ps,Math.floor((GW-GAP*2)/(total+1)),70);
-  const trayPs=Math.max(32,trayMaxPs);
+  const boardSize=Math.floor(Math.min((GH-160)/1,(GW-60)/2,180));
+  const ps=Math.floor(boardSize/grid);const bs=ps*grid;
+  const trayPs=Math.max(32,Math.min(ps,Math.floor((GW-40)/(total+1)),70));
 
   const ui=document.createElement('div');ui.id='pz-ui';G.appendChild(ui);
-
   const topbar=document.createElement('div');topbar.id='pz-topbar';
   const badges=document.createElement('div');
   ['하','중','상'].forEach((l,i)=>{const b=document.createElement('span');b.className='pz-badge';b.textContent='🧩'+l;if(i+1<lv)b.classList.add('done');if(i+1===lv)b.classList.add('cur');badges.appendChild(b);});
   const cntLbl=document.createElement('div');cntLbl.id='pz-cntlbl';cntLbl.innerHTML=`완성 <b id="pzcnt">0</b>/${total}`;
   topbar.appendChild(badges);topbar.appendChild(cntLbl);ui.appendChild(topbar);
-
   const progWrap=document.createElement('div');progWrap.id='pz-progbar';
-  const progFill=document.createElement('div');progFill.id='pz-progfill';
-  progWrap.appendChild(progFill);ui.appendChild(progWrap);
+  const progFill=document.createElement('div');progFill.id='pz-progfill';progWrap.appendChild(progFill);ui.appendChild(progWrap);
 
   const boardsRow=document.createElement('div');boardsRow.id='pz-boards';
-
   const prevWrap=document.createElement('div');prevWrap.className='pz-col-wrap';
   const prevLbl=document.createElement('div');prevLbl.className='pz-col-lbl';prevLbl.textContent='완성 그림';
   const prevC=makeEmojiCanvas(emoji,bs,grid);
@@ -315,7 +318,6 @@ function startPuzzle(lv){
   const bigC=makeEmojiCanvas(emoji,bs,0);
   const order=[...Array(total).keys()].sort(()=>Math.random()-.5);
   const pieceDivs=[];
-
   order.forEach(idx=>{
     const row=Math.floor(idx/grid),col=idx%grid;
     const pc=document.createElement('canvas');pc.width=trayPs;pc.height=trayPs;
@@ -329,8 +331,8 @@ function startPuzzle(lv){
   let ghost=null,dWrap=null,dRow=-1,dCol=-1;
   pieceDivs.forEach(pw=>{
     pw.addEventListener('mousedown',e=>{
-      if(pw.dataset.used==='1')return;
-      e.preventDefault();dWrap=pw;dRow=+pw.dataset.row;dCol=+pw.dataset.col;
+      if(pw.dataset.used==='1')return;e.preventDefault();
+      dWrap=pw;dRow=+pw.dataset.row;dCol=+pw.dataset.col;
       const src=pw.querySelector('canvas');
       ghost=document.createElement('div');ghost.className='pz-ghost';
       ghost.style.cssText=`width:${trayPs}px;height:${trayPs}px;left:${e.clientX-trayPs/2}px;top:${e.clientY-trayPs/2}px;`;
@@ -351,10 +353,8 @@ function startPuzzle(lv){
       s.style.background=over?(+s.dataset.r===dRow&&+s.dataset.c===dCol?'rgba(29,158,117,.35)':'rgba(226,75,74,.2)'):'rgba(55,138,221,.15)';
     });
   };
-
   _onUp=e=>{
-    if(!ghost||!dWrap)return;
-    ghost.remove();ghost=null;
+    if(!ghost||!dWrap)return;ghost.remove();ghost=null;
     slots.forEach(s=>{if(s.dataset.filled==='0')s.style.background='';});
     let hit=false;
     slots.forEach(s=>{
@@ -389,7 +389,8 @@ function startPuzzle(lv){
     if(!hit)dWrap.style.opacity='1';
     dWrap=null;dRow=-1;dCol=-1;
   };
-  document.addEventListener('mousemove',_onMove);document.addEventListener('mouseup',_onUp);
+  document.addEventListener('mousemove',_onMove);
+  document.addEventListener('mouseup',_onUp);
 }
 
 function showPzClear(lv){
